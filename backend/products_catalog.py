@@ -1,0 +1,66 @@
+"""Static product catalog for Poda merch.
+Prices are defined server-side ONLY to prevent client-side manipulation.
+"""
+
+PRODUCTS = {
+    "tshirt": {
+        "id": "tshirt",
+        "name": "T-shirt Poda",
+        "description": "T-shirt 100% coton bio, sérigraphié à la main.",
+        "price": 25.00,
+        "currency": "eur",
+        "image": "https://images.pexels.com/photos/12025472/pexels-photo-12025472.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "sizes": ["XS", "S", "M", "L", "XL", "XXL"],
+        "colors": ["Blanc", "Noir", "Sable"],
+    },
+    "sweat": {
+        "id": "sweat",
+        "name": "Sweat Poda",
+        "description": "Sweat capuche épais, brodé avec le logo de l'association.",
+        "price": 45.00,
+        "currency": "eur",
+        "image": "https://images.pexels.com/photos/8217416/pexels-photo-8217416.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "sizes": ["S", "M", "L", "XL", "XXL"],
+        "colors": ["Crème", "Noir", "Bleu nuit"],
+    },
+    "totebag": {
+        "id": "totebag",
+        "name": "Tote bag Poda",
+        "description": "Sac toile écru, sérigraphié, parfait pour les courses militantes.",
+        "price": 15.00,
+        "currency": "eur",
+        "image": "https://images.pexels.com/photos/6787035/pexels-photo-6787035.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "sizes": ["Unique"],
+        "colors": ["Écru", "Noir"],
+    },
+    "mug": {
+        "id": "mug",
+        "name": "Mug Poda",
+        "description": "Mug céramique 350ml, pour la pause asso bien méritée.",
+        "price": 12.00,
+        "currency": "eur",
+        "image": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&q=80&w=1000",
+        "sizes": ["Unique"],
+        "colors": ["Blanc"],
+    },
+    "casquette": {
+        "id": "casquette",
+        "name": "Casquette Poda",
+        "description": "Casquette brodée, réglable, six panneaux.",
+        "price": 20.00,
+        "currency": "eur",
+        "image": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=1000",
+        "sizes": ["Unique"],
+        "colors": ["Noir", "Beige", "Marine"],
+    },
+    "veste": {
+        "id": "veste",
+        "name": "Veste Poda",
+        "description": "Veste coupe-vent légère avec patch brodé Poda.",
+        "price": 65.00,
+        "currency": "eur",
+        "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=1000",
+        "sizes": ["S", "M", "L", "XL", "XXL"],
+        "colors": ["Noir", "Olive"],
+    },
+}
