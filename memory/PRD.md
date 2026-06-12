@@ -22,15 +22,16 @@ Créer une page Poda : merch d'association en print on demand. 6 produits, formu
 - Dashboard admin protégé par mot de passe (`ADMIN_PASSWORD`)
 - Interface 100% française
 
-## Implemented (2026-02)
-- ✅ Catalogue 6 produits + endpoints `/api/products`, `/api/progress`
-- ✅ Création de commande + Stripe Checkout `/api/orders/checkout`
-- ✅ Polling statut paiement `/api/orders/status/{session_id}` (assigne `batch_number`/`position_in_batch` au passage en `paid`)
-- ✅ Webhook Stripe `/api/webhook/stripe`
-- ✅ Email de confirmation Resend (MOCKED)
-- ✅ Dashboard admin (login, stats par produit, table commandes, action « marquer expédié »)
-- ✅ Design neo-brutalist (bordures noires 4px, ombres dures, pastels, fonts Archivo Black + IBM Plex Sans, progress-bar Kickstarter, marquee)
-- ✅ Tests pytest backend + frontend Playwright passants (100%)
+## Implemented (v1 — 2026-02-11)
+- ✅ Catalogue 6 produits, Stripe Checkout, polling, webhook, email mocked, admin dashboard v1, design neo-brutalist
+
+## Implemented (v2 — 2026-02-12)
+- ✅ **Panier multi-produits** (CartContext + localStorage, fusion auto même variante)
+- ✅ **Compteur global** : 20 unités confondues (1 cmde de 3 t-shirts = +3 au compteur)
+- ✅ **Upload logo asso** (base64 dans MongoDB, max 2 Mo) + nom d'asso configurable
+- ✅ Page `/cart` avec form de livraison intégré, success page affichant les positions globales
+- ✅ Admin v2 : stats globales, action « marquer lot #N expédié », section branding
+- ✅ Tests : 21/21 backend pytest + 100% frontend Playwright
 
 ## Backlog (P0 / P1 / P2)
 - **P1** Ajouter la vraie clé Resend pour envoyer les emails (juste `RESEND_API_KEY=re_...` dans `.env`)
