@@ -127,12 +127,19 @@ export default function HomePage() {
             </section>
 
             <footer className="border-t-4 border-black bg-black text-white py-10">
-                <div className="max-w-7xl mx-auto px-6 sm:px-10 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                    <div className="font-display text-2xl">
-                        PODA<span className="text-[#FF6B6B]">.</span>
+                <div className="max-w-7xl mx-auto px-6 sm:px-10 flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        <div className="font-display text-2xl">
+                            PODA<span className="text-[#FF6B6B]">.</span>
+                        </div>
+                        <nav className="flex flex-wrap gap-5 text-sm">
+                            <Link to="/legal/cgv" className="hover:underline" data-testid="footer-cgv">CGV</Link>
+                            <Link to="/legal/confidentialite" className="hover:underline" data-testid="footer-privacy">Confidentialité</Link>
+                            <Link to="/admin" className="hover:underline">Admin</Link>
+                        </nav>
                     </div>
-                    <p className="text-sm text-white/60">
-                        © {new Date().getFullYear()} Poda — Merch militant.
+                    <p className="text-xs text-white/50 text-center sm:text-left">
+                        © {new Date().getFullYear()} Poda · Édité par SAS BLEEM · RCS Le Mans 953 785 706 · 3 rue des Noisetiers, 72190 Sargé-lès-le-Mans · Capital 1 000 €
                     </p>
                 </div>
             </footer>

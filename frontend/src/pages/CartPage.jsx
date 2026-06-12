@@ -21,6 +21,7 @@ export default function CartPage() {
         postal_code: "",
         country: "France",
     });
+    const [acceptedCgv, setAcceptedCgv] = useState(false);
 
     useEffect(() => {
         getGlobalProgress().then(setProgress).catch(() => {});
@@ -31,6 +32,10 @@ export default function CartPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (submitting || items.length === 0) return;
+        if (!acceptedCgv) {
+            toast.error("Veuillez accepter les CGV pour continuer");
+            return;
+        }
         setSubmitting(true);
         try {
             const payload = {
@@ -177,7 +182,7 @@ export default function CartPage() {
                                 </div>
                             </div>
 
-                            <div className="border-t-4 border-black pt-4 space-y-1">
+                            <div className="border-t-4 border-black pt-4 space-y-3">
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="font-bold uppercase tracking-widest">Articles</span>
                                     <span>{totalUnits} unité{totalUnits > 1 ? "s" : ""}</span>
@@ -186,9 +191,26 @@ export default function CartPage() {
                                     <span className="text-xs uppercase tracking-widest font-bold">Total</span>
                                     <span className="font-display text-3xl" data-testid="cart-total">{totalAmount.toFixed(2)}€</span>
                                 </div>
+                                <label className="flex items-start gap-2 text-xs leading-snug cursor-pointer pt-2 border-t-2 border-black/10">
+                                    <input
+                                        type="checkbox"
+                                        checked={acceptedCgv}
+                                        onChange={(e) => setAcceptedCgv(e.target.checked)}
+                                        data-testid="cgv-checkbox"
+                                        className="mt-0.5"
+                                        required
+                                    />
+                                    <span>
+                                        J'ai lu et j'accepte les{" "}
+                                        <Link to="/legal/cgv" target="_blank" className="underline font-bold">CGV</Link>
+                                        {" "}et la{" "}
+                                        <Link to="/legal/confidentialite" target="_blank" className="underline font-bold">politique de confidentialité</Link>.
+                                        Je comprends que mes produits sont personnalisés à la demande et qu'aucun droit de rétractation ne s'applique (art. L221-28 du Code de la consommation).
+                                    </span>
+                                </label>
                             </div>
 
-                            <button type="submit" disabled={submitting} className="neo-btn neo-btn-primary w-full" data-testid="submit-checkout">
+                            <button type="submit" disabled={submitting || !acceptedCgv} className="neo-btn neo-btn-primary w-full" data-testid="submit-checkout">
                                 {submitting ? <><Loader2 size={18} className="animate-spin" /> Redirection…</> : <><CreditCard size={18} /> Payer avec Stripe</>}
                             </button>
                         </form>
