@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProducts, getAllProgress } from "../lib/api";
+import { getProducts, getGlobalProgress } from "../lib/api";
 import { BatchProgress } from "../components/BatchProgress";
-import { Truck, Sparkles, Users } from "lucide-react";
+import { ProductCard } from "../components/ProductCard";
+import { Sparkles, Users, ShoppingBag } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 export default function HomePage() {
     const [products, setProducts] = useState([]);
-    const [progressMap, setProgressMap] = useState({});
+    const [progress, setProgress] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { totalUnits } = useCart();
 
     useEffect(() => {
         (async () => {
             try {
-                const [p, prog] = await Promise.all([getProducts(), getAllProgress()]);
+                const [p, prog] = await Promise.all([getProducts(), getGlobalProgress()]);
                 setProducts(p);
-                const map = {};
-                prog.forEach((x) => (map[x.product_id] = x));
-                setProgressMap(map);
+                setProgress(prog);
             } catch (e) {
                 console.error(e);
             } finally {
@@ -24,8 +25,6 @@ export default function HomePage() {
             }
         })();
     }, []);
-
-    const totalPaid = Object.values(progressMap).reduce((a, b) => a + b.total_paid, 0);
 
     return (
         <div className="min-h-screen">
@@ -49,39 +48,18 @@ export default function HomePage() {
                                 </span>
                             </h1>
                             <p className="text-lg sm:text-xl text-black/70 max-w-xl mb-8">
-                                Commandez votre pièce Poda. Dès que <b>20 commandes</b> sont passées sur un produit,
-                                le lot est lancé en production et expédié directement au bureau de l'association.
+                                Composez votre commande, ajoutez vos pièces au panier. Dès que <b>20 unités au total</b> sont
+                                achetées (tous produits confondus), le lot part en production et est expédié au bureau de l'asso.
                             </p>
                             <div className="flex flex-wrap gap-4">
-                                <a
-                                    href="#produits"
-                                    data-testid="hero-cta-shop"
-                                    className="neo-btn neo-btn-primary"
-                                >
+                                <a href="#produits" data-testid="hero-cta-shop" className="neo-btn neo-btn-primary">
                                     Voir la boutique
                                 </a>
-                                <a
-                                    href="#concept"
-                                    data-testid="hero-cta-concept"
-                                    className="neo-btn neo-btn-secondary"
-                                >
-                                    Le concept
-                                </a>
-                            </div>
-                            <div className="mt-10 flex gap-6 flex-wrap">
-                                <div className="neo-card px-5 py-4">
-                                    <div className="text-xs uppercase tracking-widest font-bold">Commandes totales</div>
-                                    <div className="font-display text-3xl mt-1" data-testid="stat-total-orders">
-                                        {totalPaid}
-                                    </div>
-                                </div>
-                                <div className="neo-card px-5 py-4 bg-[#FBCFE8]">
-                                    <div className="text-xs uppercase tracking-widest font-bold">Lot</div>
-                                    <div className="font-display text-3xl mt-1">20 pièces</div>
-                                </div>
+                                <Link to="/cart" data-testid="hero-cta-cart" className="neo-btn neo-btn-secondary">
+                                    <ShoppingBag size={18} /> Mon panier ({totalUnits})
+                                </Link>
                             </div>
                         </div>
-
                         <div className="lg:col-span-5">
                             <div className="neo-card p-6 sm:p-8">
                                 <div className="flex items-center gap-3 mb-4">
@@ -90,26 +68,16 @@ export default function HomePage() {
                                         Progression collective
                                     </span>
                                 </div>
-                                <div className="space-y-5">
-                                    {products.slice(0, 4).map((p) => (
-                                        <BatchProgress
-                                            key={p.id}
-                                            progress={progressMap[p.id]}
-                                            label={p.name}
-                                            compact
-                                        />
-                                    ))}
-                                </div>
+                                <BatchProgress progress={progress} />
                             </div>
                         </div>
                     </div>
                 </div>
-                {/* Marquee */}
                 <div className="border-t-4 border-black bg-[#FF6B6B] py-3 overflow-hidden">
                     <div className="marquee-track text-white font-display text-xl uppercase tracking-tight">
                         {Array.from({ length: 2 }).map((_, i) => (
                             <div key={i} className="flex items-center gap-12 px-12 whitespace-nowrap">
-                                <span>20 commandes = 1 lot expédié</span>
+                                <span>20 unités = 1 lot expédié</span>
                                 <span>•</span>
                                 <span>Print on demand militant</span>
                                 <span>•</span>
@@ -125,21 +93,14 @@ export default function HomePage() {
 
             {/* Concept */}
             <section id="concept" className="max-w-7xl mx-auto px-6 sm:px-10 py-20">
-                <h2 className="font-display text-4xl sm:text-5xl mb-10 max-w-2xl">
-                    Comment ça marche ?
-                </h2>
+                <h2 className="font-display text-4xl sm:text-5xl mb-10 max-w-2xl">Comment ça marche ?</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { n: "01", t: "Choisissez votre pièce", d: "Six produits brodés ou sérigraphiés au choix.", c: "#FBEA8C" },
-                        { n: "02", t: "Commandez en 1 clic", d: "Formulaire express + paiement Stripe sécurisé.", c: "#C4B5FD" },
-                        { n: "03", t: "Lot expédié à 20", d: "Dès que 20 commandes sont atteintes, on lance la prod.", c: "#FBCFE8" },
+                        { n: "01", t: "Composez votre panier", d: "Choisissez vos pièces, tailles, couleurs et quantités.", c: "#FBEA8C" },
+                        { n: "02", t: "Payez en 1 clic", d: "Formulaire express + paiement Stripe sécurisé.", c: "#C4B5FD" },
+                        { n: "03", t: "Lot expédié à 20", d: "Dès que 20 unités tous produits confondus sont atteintes, on lance la prod.", c: "#FBCFE8" },
                     ].map((step) => (
-                        <div
-                            key={step.n}
-                            className="neo-card p-6"
-                            style={{ background: step.c }}
-                            data-testid={`step-${step.n}`}
-                        >
+                        <div key={step.n} className="neo-card p-6" style={{ background: step.c }}>
                             <div className="font-display text-5xl mb-4">{step.n}</div>
                             <h3 className="font-display text-2xl mb-2">{step.t}</h3>
                             <p className="text-black/70">{step.d}</p>
@@ -156,44 +117,11 @@ export default function HomePage() {
                         {products.length} produits · Print on demand
                     </p>
                 </div>
-
                 {loading ? (
                     <div className="text-center py-20 font-display text-2xl">Chargement…</div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {products.map((p) => (
-                            <article
-                                key={p.id}
-                                data-testid={`product-card-${p.id}`}
-                                className="neo-card neo-card-hover flex flex-col"
-                            >
-                                <div className="aspect-square bg-[#FDF8F5] border-b-4 border-black overflow-hidden">
-                                    <img
-                                        src={p.image}
-                                        alt={p.name}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <div className="p-5 flex flex-col flex-1">
-                                    <div className="flex items-baseline justify-between mb-2">
-                                        <h3 className="font-display text-2xl">{p.name}</h3>
-                                        <span className="font-display text-2xl">{p.price.toFixed(0)}€</span>
-                                    </div>
-                                    <p className="text-sm text-black/70 mb-4">{p.description}</p>
-                                    <div className="mb-4">
-                                        <BatchProgress progress={progressMap[p.id]} compact />
-                                    </div>
-                                    <Link
-                                        to={`/commander/${p.id}`}
-                                        data-testid={`order-btn-${p.id}`}
-                                        className="neo-btn neo-btn-primary mt-auto"
-                                    >
-                                        <Truck size={18} /> Commander
-                                    </Link>
-                                </div>
-                            </article>
-                        ))}
+                        {products.map((p) => <ProductCard key={p.id} product={p} />)}
                     </div>
                 )}
             </section>
@@ -204,7 +132,7 @@ export default function HomePage() {
                         PODA<span className="text-[#FF6B6B]">.</span>
                     </div>
                     <p className="text-sm text-white/60">
-                        © {new Date().getFullYear()} Poda — Merch militant, fabriqué avec soin.
+                        © {new Date().getFullYear()} Poda — Merch militant.
                     </p>
                 </div>
             </footer>
