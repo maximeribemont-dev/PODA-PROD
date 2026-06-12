@@ -50,9 +50,15 @@ export default function AdminPage() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        const pwd = (password || "").trim();
+        if (!pwd) {
+            toast.error("Mot de passe requis");
+            return;
+        }
         try {
-            await adminLogin(password);
-            sessionStorage.setItem(STORAGE_KEY, password);
+            await adminLogin(pwd);
+            sessionStorage.setItem(STORAGE_KEY, pwd);
+            setPassword(pwd);
             setAuthed(true);
             toast.success("Bienvenue admin !");
         } catch {
