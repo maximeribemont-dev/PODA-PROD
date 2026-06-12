@@ -1,3 +1,4 @@
+import ProductsAdmin from "../components/ProductsAdmin";
 import { useEffect, useRef, useState } from "react";
 import {
     adminLogin,
@@ -284,7 +285,9 @@ export default function AdminPage() {
             </div>
 
             {/* Orders table */}
-            <section>
+            <ProductsAdmin password={password} />
+
+            <section className="mt-12">
                 <h2 className="font-display text-2xl mb-4">Commandes ({orders.length})</h2>
                 <div className="neo-card overflow-x-auto">
                     <table className="w-full text-sm">

@@ -19,7 +19,7 @@ from emergentintegrations.payments.stripe.checkout import (
     CheckoutStatusResponse,
 )
 
-from products_catalog import PRODUCTS
+from products_catalog import PRODUCTS as SEED_PRODUCTS
 
 try:
     import resend  # type: ignore
@@ -104,6 +104,18 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+async def _seed_products_if_empty():
+    count = await db.products.count_documents({})
+    if count == 0:
+        for p in SEED_PRODUCTS.values():
+            await db.products.insert_one({**p, "active": True, "created_at": now_iso()})
+        logger.info("Seeded %d default products", len(SEED_PRODUCTS))
+
+
+async def _get_product(product_id: str) -> Optional[dict]:
+    return await db.products.find_one({"id": product_id, "active": True}, {"_id": 0})
+
+
 async def _count_paid_units() -> int:
     """Count total paid units across all orders (global counter)."""
     cursor = db.orders.aggregate(
@@ -174,12 +186,13 @@ async def root():
 
 @api_router.get("/products", response_model=List[ProductPublic])
 async def list_products():
-    return [ProductPublic(**p) for p in PRODUCTS.values()]
+    docs = await db.products.find({"active": True}, {"_id": 0}).sort("created_at", 1).to_list(length=200)
+    return [ProductPublic(**d) for d in docs]
 
 
 @api_router.get("/products/{product_id}", response_model=ProductPublic)
 async def get_product(product_id: str):
-    p = PRODUCTS.get(product_id)
+    p = await _get_product(product_id)
     if not p:
         raise HTTPException(404, "Produit introuvable")
     return ProductPublic(**p)
@@ -219,7 +232,7 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
     total_amount = 0.0
     total_units = 0
     for it in body.items:
-        product = PRODUCTS.get(it.product_id)
+        product = await _get_product(it.product_id)
         if not product:
             raise HTTPException(400, f"Produit invalide: {it.product_id}")
         if it.size not in product["sizes"]:
@@ -495,8 +508,6 @@ async def delete_logo():
     return {"ok": True}
 
 
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -504,6 +515,78 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@api_router.get("/admin/products", dependencies=[Depends(require_admin)])
+async def admin_list_products():
+    return await db.products.find({}, {"_id": 0}).sort("created_at", 1).to_list(length=200)
+
+
+class ProductUpsert(BaseModel):
+    id: Optional[str] = None
+    name: str
+    description: str = ""
+    price: float = Field(gt=0)
+    image: str = ""
+    sizes: List[str] = Field(default_factory=lambda: ["Unique"])
+    colors: List[str] = Field(default_factory=lambda: ["Standard"])
+    active: bool = True
+
+
+@api_router.post("/admin/products", dependencies=[Depends(require_admin)])
+async def admin_create_product(body: ProductUpsert):
+    pid = (body.id or body.name.lower().replace(" ", "-"))[:40]
+    if await db.products.find_one({"id": pid}):
+        raise HTTPException(400, "Cet identifiant existe déjà, choisissez-en un autre")
+    doc = {
+        "id": pid,
+        "name": body.name,
+        "description": body.description,
+        "price": float(body.price),
+        "currency": "eur",
+        "image": body.image or "https://images.pexels.com/photos/12025472/pexels-photo-12025472.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "sizes": body.sizes or ["Unique"],
+        "colors": body.colors or ["Standard"],
+        "active": body.active,
+        "created_at": now_iso(),
+    }
+    await db.products.insert_one(doc)
+    return await db.products.find_one({"id": pid}, {"_id": 0})
+
+
+@api_router.put("/admin/products/{product_id}", dependencies=[Depends(require_admin)])
+async def admin_update_product(product_id: str, body: ProductUpsert):
+    existing = await db.products.find_one({"id": product_id})
+    if not existing:
+        raise HTTPException(404, "Produit introuvable")
+    update = {
+        "name": body.name,
+        "description": body.description,
+        "price": float(body.price),
+        "image": body.image or existing.get("image"),
+        "sizes": body.sizes or ["Unique"],
+        "colors": body.colors or ["Standard"],
+        "active": body.active,
+        "updated_at": now_iso(),
+    }
+    await db.products.update_one({"id": product_id}, {"$set": update})
+    return await db.products.find_one({"id": product_id}, {"_id": 0})
+
+
+@api_router.delete("/admin/products/{product_id}", dependencies=[Depends(require_admin)])
+async def admin_delete_product(product_id: str):
+    result = await db.products.delete_one({"id": product_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Produit introuvable")
+    return {"ok": True}
+
+
+@app.on_event("startup")
+async def on_startup():
+    await _seed_products_if_empty()
+
+
+app.include_router(api_router)
 
 
 @app.on_event("shutdown")

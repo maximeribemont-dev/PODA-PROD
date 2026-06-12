@@ -44,3 +44,16 @@ export const adminUpdateBranding = async (password, { file, associationName }) =
 
 export const adminDeleteLogo = async (password) =>
     (await api.delete("/admin/settings/logo", { headers: { "X-Admin-Password": password } })).data;
+
+// Products CRUD
+export const adminListProducts = async (password) =>
+    (await api.get("/admin/products", { headers: { "X-Admin-Password": password } })).data;
+
+export const adminCreateProduct = async (password, payload) =>
+    (await api.post("/admin/products", payload, { headers: { "X-Admin-Password": password } })).data;
+
+export const adminUpdateProduct = async (password, id, payload) =>
+    (await api.put(`/admin/products/${id}`, payload, { headers: { "X-Admin-Password": password } })).data;
+
+export const adminDeleteProduct = async (password, id) =>
+    (await api.delete(`/admin/products/${id}`, { headers: { "X-Admin-Password": password } })).data;
