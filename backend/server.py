@@ -12,12 +12,7 @@ from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Dict
 from datetime import datetime, timezone
 
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout,
-    CheckoutSessionRequest,
-    CheckoutSessionResponse,
-    CheckoutStatusResponse,
-)
+import stripe
 
 from products_catalog import PRODUCTS as SEED_PRODUCTS
 
@@ -33,6 +28,8 @@ load_dotenv(ROOT_DIR / ".env")
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "sk_test_emergent")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+stripe.api_key = STRIPE_API_KEY
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "poda2026")
@@ -262,9 +259,6 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
     success_url = f"{body.origin_url.rstrip('/')}/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{body.origin_url.rstrip('/')}/cart"
 
-    host_url = str(http_request.base_url)
-    sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=f"{host_url.rstrip('/')}/api/webhook/stripe")
-
     metadata = {
         "order_id": order_id,
         "order_number": order_number,
@@ -272,15 +266,21 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
         "total_units": str(total_units),
     }
 
-    req = CheckoutSessionRequest(
-        amount=total_amount,
-        currency="eur",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata=metadata,
-    )
     try:
-        session: CheckoutSessionResponse = await sc.create_checkout_session(req)
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[{
+                "price_data": {
+                    "currency": "eur",
+                    "unit_amount": round(total_amount * 100),
+                    "product_data": {"name": f"Commande {order_number}"},
+                },
+                "quantity": 1,
+            }],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+        )
     except Exception as e:
         logger.exception("Stripe session creation failed")
         raise HTTPException(502, f"Erreur Stripe: {e}")
@@ -293,7 +293,7 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
         "total_units": total_units,
         "currency": "eur",
         "customer": body.customer.model_dump(),
-        "stripe_session_id": session.session_id,
+        "stripe_session_id": session.id,
         "payment_status": "initiated",
         "batch_number": None,
         "start_position": None,
@@ -306,7 +306,7 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
         "order_id": order_id,
-        "session_id": session.session_id,
+        "session_id": session.id,
         "amount": total_amount,
         "currency": "eur",
         "metadata": metadata,
@@ -318,7 +318,7 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
 
     return {
         "checkout_url": session.url,
-        "session_id": session.session_id,
+        "session_id": session.id,
         "order_id": order_id,
         "order_number": order_number,
     }
@@ -331,9 +331,8 @@ async def _finalize_order_if_paid(session_id: str) -> Optional[dict]:
     if order.get("payment_status") == "paid":
         return order
 
-    sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="https://example.com/api/webhook/stripe")
     try:
-        status: CheckoutStatusResponse = await sc.get_checkout_status(session_id)
+        status = await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
     except Exception as e:
         logger.error("get_checkout_status failed: %s", e)
         return order
@@ -400,14 +399,15 @@ async def order_status(session_id: str):
 async def stripe_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("Stripe-Signature", "")
-    sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="https://example.com/api/webhook/stripe")
     try:
-        event = await sc.handle_webhook(body, signature)
+        event = stripe.Webhook.construct_event(body, signature, STRIPE_WEBHOOK_SECRET)
     except Exception as e:
         logger.error("Webhook handling failed: %s", e)
         raise HTTPException(400, "Webhook invalide")
-    if event and getattr(event, "session_id", None):
-        await _finalize_order_if_paid(event.session_id)
+    session_obj = event.get("data", {}).get("object", {})
+    session_id = session_obj.get("id")
+    if session_id:
+        await _finalize_order_if_paid(session_id)
     return {"received": True}
 
 
