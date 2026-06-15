@@ -531,7 +531,7 @@ async def delete_logo():
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "https://poda-frontend-mu.vercel.app").split(","),
+    allow_origins=os.environ.get("CORS_ORIGINS", "https://poda-frontend-mu.vercel.app,https://poda-backend.vercel.app").split(","),
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
