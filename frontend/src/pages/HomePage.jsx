@@ -79,11 +79,11 @@ export default function HomePage() {
                             <div key={i} className="flex items-center gap-12 px-12 whitespace-nowrap">
                                 <span>20 unités = 1 lot expédié</span>
                                 <span>•</span>
-                                <span>Print on demand militant</span>
+                                <span>Print on demand</span>
                                 <span>•</span>
                                 <span>Fait avec amour pour l'asso</span>
                                 <span>•</span>
-                                <span>Livraison au bureau Poda</span>
+                                <span>Livraison au bureau de l'asso</span>
                                 <span>•</span>
                             </div>
                         ))}
