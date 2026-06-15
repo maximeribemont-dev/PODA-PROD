@@ -2,6 +2,10 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request, Header, Depends,
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from passlib.context import CryptContext
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 import logging
 import asyncio
@@ -35,6 +39,9 @@ SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "poda2026")
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "20"))
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+limiter = Limiter(key_func=get_remote_address)
+
 if resend and RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
@@ -48,6 +55,8 @@ logging.basicConfig(
 logger = logging.getLogger("poda")
 
 app = FastAPI(title="Poda API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 api_router = APIRouter(prefix="/api")
 
 
@@ -221,6 +230,7 @@ async def get_branding():
 
 # ---------------- Checkout ----------------
 @api_router.post("/orders/checkout")
+@limiter.limit("10/minute")
 async def create_checkout(body: CheckoutRequest, http_request: Request):
     if not body.items:
         raise HTTPException(400, "Panier vide")
@@ -419,9 +429,19 @@ def require_admin(x_admin_password: Optional[str] = Header(default=None)):
 
 
 @api_router.post("/admin/login")
-async def admin_login(payload: Dict[str, str]):
-    if payload.get("password") != ADMIN_PASSWORD:
-        raise HTTPException(401, "Mot de passe incorrect")
+@limiter.limit("5/minute")
+async def admin_login(request: Request, payload: Dict[str, str]):
+    password = payload.get("password", "")
+    # Support mot de passe en clair (env var) OU hash bcrypt stocké
+    admin_pw = ADMIN_PASSWORD
+    if admin_pw.startswith("$2b$"):
+        # Mot de passe hashé
+        if not pwd_context.verify(password, admin_pw):
+            raise HTTPException(401, "Mot de passe incorrect")
+    else:
+        # Comparaison directe (rétrocompatible)
+        if password != admin_pw:
+            raise HTTPException(401, "Mot de passe incorrect")
     return {"ok": True}
 
 
@@ -511,8 +531,8 @@ async def delete_logo():
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_methods=["*"],
+    allow_origins=os.environ.get("CORS_ORIGINS", "https://poda-frontend-mu.vercel.app").split(","),
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
