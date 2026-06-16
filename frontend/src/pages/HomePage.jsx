@@ -131,7 +131,7 @@ export default function HomePage() {
                     <div className="flex flex-col items-center gap-3 py-4 border border-white/20 rounded-lg px-6 text-center">
                         <p className="text-white font-display text-lg uppercase tracking-tight">Tu veux un PODA pour ton asso ?</p>
                         <a
-                            href="https://bleem-co.fr"
+                            href="https://bleem-co.fr/contactez-nous/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-block bg-[#FF6B6B] text-black font-display uppercase text-sm px-6 py-2 border-2 border-[#FF6B6B] hover:bg-transparent hover:text-[#FF6B6B] transition-colors"
