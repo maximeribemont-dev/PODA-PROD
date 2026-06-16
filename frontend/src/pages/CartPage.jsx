@@ -94,23 +94,23 @@ export default function CartPage() {
                     <div className="lg:col-span-7 space-y-5" data-testid="cart-items">
                         {items.map((it, i) => (
                             <div key={`${it.product_id}-${it.size}-${it.color}-${i}`} className="neo-card p-4 flex gap-4" data-testid={`cart-item-${i}`}>
-                                {it.product_id === "__unlock__" ? (
+                                {it.product_id === "__express__" ? (
                                     <div className="w-24 h-24 flex-shrink-0 bg-black flex items-center justify-center text-3xl border-2 border-black">
-                                        ⚡
+                                        🚀
                                     </div>
                                 ) : (
                                     <img src={it.image} alt={it.product_name} className="w-24 h-24 object-cover border-2 border-black flex-shrink-0" />
                                 )}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline justify-between gap-2">
-                                        <h3 className="font-display text-xl truncate">{it.product_id === "__unlock__" ? it.name : it.product_name}</h3>
+                                        <h3 className="font-display text-xl truncate">{it.product_id === "__express__" ? it.name : it.product_name}</h3>
                                         <span className="font-display text-lg whitespace-nowrap">
                                             {(it.unit_price * it.quantity).toFixed(2)}€
                                         </span>
                                     </div>
-                                    {it.product_id === "__unlock__" ? (
+                                    {it.product_id === "__express__" ? (
                                         <p className="text-xs uppercase tracking-widest font-bold text-[#FF6B6B] mb-3">
-                                            Je ne veux pas attendre — je débloque le lot pour tout le monde
+                                            Je sors du lot — livraison directement chez moi
                                         </p>
                                     ) : (
                                         <p className="text-xs uppercase tracking-widest font-bold text-black/60 mb-3">

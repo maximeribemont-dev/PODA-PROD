@@ -8,13 +8,13 @@ export const BatchProgress = ({ progress, compact = false }) => {
     const pct = (filled / size) * 100;
     const remaining = progress.remaining;
     const isComplete = remaining === 0;
-    const hasUnlock = items.some((i) => i.product_id === "__unlock__");
+    const hasExpress = items.some((i) => i.product_id === "__express__");
 
-    const handleUnlock = () => {
-        if (hasUnlock) return;
+    const handleExpress = () => {
+        if (hasExpress) return;
         addItem({
-            product_id: "__unlock__",
-            name: "⚡ Déblocage du lot",
+            product_id: "__express__",
+            name: "🚀 Livraison express à domicile",
             size: "—",
             color: "—",
             quantity: 1,
@@ -47,21 +47,21 @@ export const BatchProgress = ({ progress, compact = false }) => {
                             ? "🎉 Lot complet — en route vers la production !"
                             : `Encore ${remaining} unité${remaining > 1 ? "s" : ""} avant expédition au bureau.`}
                     </p>
-                    {!isComplete && remaining < size && (
+                    {!isComplete && (
                         <button
-                            onClick={handleUnlock}
-                            disabled={hasUnlock}
-                            className={`mt-3 flex items-center justify-center gap-2 w-full border-2 border-black font-display uppercase text-sm px-4 py-2 transition-colors ${
-                                hasUnlock
+                            onClick={handleExpress}
+                            disabled={hasExpress}
+                            className={`mt-3 flex items-center justify-center gap-2 w-full border-2 font-display uppercase text-sm px-4 py-2 transition-colors ${
+                                hasExpress
                                     ? "bg-green-100 border-green-500 text-green-700 cursor-default"
-                                    : "bg-black text-white hover:bg-transparent hover:text-black"
+                                    : "border-black bg-transparent text-black hover:bg-black hover:text-white"
                             }`}
                         >
-                            {hasUnlock ? (
-                                "✓ Déblocage ajouté au panier"
+                            {hasExpress ? (
+                                "✓ Livraison à domicile ajoutée"
                             ) : (
                                 <>
-                                    ⚡ Je débloque la commande
+                                    🚀 Je sors du lot — livraison à domicile
                                     <span className="bg-[#FF6B6B] text-white text-xs px-2 py-0.5 font-bold">+20€</span>
                                 </>
                             )}
