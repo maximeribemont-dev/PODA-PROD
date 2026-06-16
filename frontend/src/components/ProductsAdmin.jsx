@@ -155,8 +155,54 @@ export default function ProductsAdmin({ password }) {
                             <input type="number" step="0.01" className="neo-input" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} data-testid="product-price" />
                         </div>
                         <div>
-                            <label className="neo-label">URL Image</label>
-                            <input className="neo-input" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." data-testid="product-image" />
+                            <label className="neo-label">Image produit</label>
+                            <div className="flex flex-col gap-2">
+                                {form.image && (
+                                    <img src={form.image} alt="aperçu" className="w-24 h-24 object-cover border-2 border-black" />
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const widget = window.cloudinary.createUploadWidget(
+                                            {
+                                                cloudName: "dpwsbjwl0",
+                                                uploadPreset: "poda_products",
+                                                sources: ["local", "camera"],
+                                                multiple: false,
+                                                cropping: true,
+                                                croppingAspectRatio: 1,
+                                                language: "fr",
+                                                text: {
+                                                    fr: {
+                                                        or: "ou",
+                                                        menu: { files: "Mes fichiers", camera: "Caméra" },
+                                                        selection_counter: { image: "image sélectionnée" },
+                                                        actions: { upload: "Envoyer", clear: "Effacer" },
+                                                    }
+                                                }
+                                            },
+                                            (error, result) => {
+                                                if (!error && result?.event === "success") {
+                                                    setForm(f => ({ ...f, image: result.info.secure_url }));
+                                                }
+                                            }
+                                        );
+                                        widget.open();
+                                    }}
+                                    className="neo-btn-outline text-sm flex items-center gap-2"
+                                >
+                                    📷 {form.image ? "Changer l'image" : "Choisir une image"}
+                                </button>
+                                {form.image && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, image: "" }))}
+                                        className="text-xs text-[#FF6B6B] hover:underline text-left"
+                                    >
+                                        Supprimer l'image
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div>
                             <label className="neo-label">Tailles (virgules)</label>
