@@ -14,6 +14,7 @@ const EMPTY = {
     description: "",
     price: 25,
     image: "",
+    image_verso: "",
     sizes: "Unique",
     colors: "Standard",
     active: true,
@@ -50,6 +51,7 @@ export default function ProductsAdmin({ password }) {
             description: p.description,
             price: p.price,
             image: p.image,
+            image_verso: p.image_verso || "",
             sizes: (p.sizes || []).join(", "),
             colors: (p.colors || []).join(", "),
             active: p.active !== false,
@@ -73,6 +75,7 @@ export default function ProductsAdmin({ password }) {
                 description: form.description.trim(),
                 price: Number(form.price),
                 image: form.image.trim(),
+                image_verso: form.image_verso.trim(),
                 sizes: form.sizes.split(",").map((s) => s.trim()).filter(Boolean),
                 colors: form.colors.split(",").map((s) => s.trim()).filter(Boolean),
                 active: !!form.active,
@@ -154,54 +157,57 @@ export default function ProductsAdmin({ password }) {
                             <label className="neo-label">Prix (€)</label>
                             <input type="number" step="0.01" className="neo-input" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} data-testid="product-price" />
                         </div>
-                        <div>
-                            <label className="neo-label">Image produit</label>
-                            <div className="flex flex-col gap-2">
-                                {form.image && (
-                                    <img src={form.image} alt="aperçu" className="w-24 h-24 object-cover border-2 border-black" />
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const widget = window.cloudinary.createUploadWidget(
-                                            {
-                                                cloudName: "dpwsbjwl0",
-                                                uploadPreset: "poda_products",
-                                                sources: ["local", "camera"],
-                                                multiple: false,
-                                                cropping: true,
-                                                croppingAspectRatio: 1,
-                                                language: "fr",
-                                                text: {
-                                                    fr: {
-                                                        or: "ou",
-                                                        menu: { files: "Mes fichiers", camera: "Caméra" },
-                                                        selection_counter: { image: "image sélectionnée" },
-                                                        actions: { upload: "Envoyer", clear: "Effacer" },
-                                                    }
-                                                }
-                                            },
-                                            (error, result) => {
-                                                if (!error && result?.event === "success") {
-                                                    setForm(f => ({ ...f, image: result.info.secure_url }));
-                                                }
-                                            }
-                                        );
-                                        widget.open();
-                                    }}
-                                    className="neo-btn-outline text-sm flex items-center gap-2"
-                                >
-                                    📷 {form.image ? "Changer l'image" : "Choisir une image"}
-                                </button>
-                                {form.image && (
+                        <div className="md:col-span-2">
+                            <label className="neo-label">Photos produit</label>
+                            <div className="flex gap-4 flex-wrap">
+                                {/* RECTO */}
+                                <div className="flex flex-col gap-2 items-center">
+                                    <span className="text-xs font-bold uppercase tracking-widest">Recto</span>
+                                    {form.image && (
+                                        <img src={form.image} alt="recto" className="w-24 h-24 object-cover border-2 border-black" />
+                                    )}
                                     <button
                                         type="button"
-                                        onClick={() => setForm(f => ({ ...f, image: "" }))}
-                                        className="text-xs text-[#FF6B6B] hover:underline text-left"
+                                        onClick={() => {
+                                            window.cloudinary.createUploadWidget(
+                                                { cloudName: "dpwsbjwl0", uploadPreset: "poda_products", sources: ["local", "camera"], multiple: false, cropping: true, croppingAspectRatio: 1 },
+                                                (error, result) => { if (!error && result?.event === "success") setForm(f => ({ ...f, image: result.info.secure_url })); }
+                                            ).open();
+                                        }}
+                                        className="neo-btn-outline text-sm"
                                     >
-                                        Supprimer l'image
+                                        📷 {form.image ? "Changer" : "Ajouter"}
                                     </button>
-                                )}
+                                    {form.image && (
+                                        <button type="button" onClick={() => setForm(f => ({ ...f, image: "" }))} className="text-xs text-[#FF6B6B] hover:underline">
+                                            Supprimer
+                                        </button>
+                                    )}
+                                </div>
+                                {/* VERSO */}
+                                <div className="flex flex-col gap-2 items-center">
+                                    <span className="text-xs font-bold uppercase tracking-widest">Verso</span>
+                                    {form.image_verso && (
+                                        <img src={form.image_verso} alt="verso" className="w-24 h-24 object-cover border-2 border-black" />
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            window.cloudinary.createUploadWidget(
+                                                { cloudName: "dpwsbjwl0", uploadPreset: "poda_products", sources: ["local", "camera"], multiple: false, cropping: true, croppingAspectRatio: 1 },
+                                                (error, result) => { if (!error && result?.event === "success") setForm(f => ({ ...f, image_verso: result.info.secure_url })); }
+                                            ).open();
+                                        }}
+                                        className="neo-btn-outline text-sm"
+                                    >
+                                        📷 {form.image_verso ? "Changer" : "Ajouter"}
+                                    </button>
+                                    {form.image_verso && (
+                                        <button type="button" onClick={() => setForm(f => ({ ...f, image_verso: "" }))} className="text-xs text-[#FF6B6B] hover:underline">
+                                            Supprimer
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div>

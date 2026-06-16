@@ -9,6 +9,10 @@ export const ProductCard = ({ product }) => {
     const [color, setColor] = useState(product.colors[0]);
     const [qty, setQty] = useState(1);
     const [justAdded, setJustAdded] = useState(false);
+    const [showVerso, setShowVerso] = useState(false);
+
+    const hasVerso = !!product.image_verso;
+    const currentImage = showVerso ? product.image_verso : product.image;
 
     const handleAdd = () => {
         addItem({
@@ -28,8 +32,17 @@ export const ProductCard = ({ product }) => {
 
     return (
         <article data-testid={`product-card-${product.id}`} className="neo-card neo-card-hover flex flex-col">
-            <div className="aspect-square bg-[#FDF8F5] border-b-4 border-black overflow-hidden">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+            <div className="aspect-square bg-[#FDF8F5] border-b-4 border-black overflow-hidden relative">
+                <img src={currentImage} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                {hasVerso && (
+                    <button
+                        type="button"
+                        onClick={() => setShowVerso(v => !v)}
+                        className="absolute bottom-2 right-2 bg-black text-white text-xs font-bold uppercase px-2 py-1 border-2 border-black hover:bg-white hover:text-black transition-colors"
+                    >
+                        {showVerso ? "← Recto" : "Verso →"}
+                    </button>
+                )}
             </div>
             <div className="p-5 flex flex-col flex-1 gap-3">
                 <div className="flex items-baseline justify-between">

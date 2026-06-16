@@ -560,6 +560,7 @@ class ProductUpsert(BaseModel):
     description: str = ""
     price: float = Field(gt=0)
     image: str = ""
+    image_verso: str = ""
     sizes: List[str] = Field(default_factory=lambda: ["Unique"])
     colors: List[str] = Field(default_factory=lambda: ["Standard"])
     active: bool = True
@@ -577,6 +578,7 @@ async def admin_create_product(body: ProductUpsert):
         "price": float(body.price),
         "currency": "eur",
         "image": body.image or "https://images.pexels.com/photos/12025472/pexels-photo-12025472.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "image_verso": body.image_verso or "",
         "sizes": body.sizes or ["Unique"],
         "colors": body.colors or ["Standard"],
         "active": body.active,
@@ -596,6 +598,7 @@ async def admin_update_product(product_id: str, body: ProductUpsert):
         "description": body.description,
         "price": float(body.price),
         "image": body.image or existing.get("image"),
+        "image_verso": body.image_verso if body.image_verso is not None else existing.get("image_verso", ""),
         "sizes": body.sizes or ["Unique"],
         "colors": body.colors or ["Standard"],
         "active": body.active,
