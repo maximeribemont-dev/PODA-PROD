@@ -228,7 +228,24 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
     normalized_items: List[dict] = []
     total_amount = 0.0
     total_units = 0
+    has_unlock = False
     for it in body.items:
+        # Item spécial déblocage de lot
+        if it.product_id == "__unlock__":
+            has_unlock = True
+            unlock_amount = 20.0
+            total_amount += unlock_amount
+            normalized_items.append({
+                "product_id": "__unlock__",
+                "product_name": "⚡ Déblocage du lot",
+                "size": "—",
+                "color": "—",
+                "quantity": 1,
+                "unit_price": unlock_amount,
+                "line_total": unlock_amount,
+                "is_unlock": True,
+            })
+            continue
         product = await _get_product(it.product_id)
         if not product:
             raise HTTPException(400, f"Produit invalide: {it.product_id}")
@@ -267,16 +284,31 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
     }
 
     try:
+        stripe_line_items = []
+        for item in normalized_items:
+            if item["product_id"] == "__unlock__":
+                stripe_line_items.append({
+                    "price_data": {
+                        "currency": "eur",
+                        "unit_amount": 2000,
+                        "product_data": {"name": "⚡ Déblocage du lot — je ne veux pas attendre"},
+                    },
+                    "quantity": 1,
+                })
+            else:
+                stripe_line_items.append({
+                    "price_data": {
+                        "currency": "eur",
+                        "unit_amount": round(item["unit_price"] * 100),
+                        "product_data": {
+                            "name": f"{item['product_name']} — {item['size']} / {item['color']}",
+                        },
+                    },
+                    "quantity": item["quantity"],
+                })
         session = stripe.checkout.Session.create(
             mode="payment",
-            line_items=[{
-                "price_data": {
-                    "currency": "eur",
-                    "unit_amount": round(total_amount * 100),
-                    "product_data": {"name": f"Commande {order_number}"},
-                },
-                "quantity": 1,
-            }],
+            line_items=stripe_line_items,
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
