@@ -61,7 +61,7 @@ export const BatchProgress = ({ progress, compact = false }) => {
                                 "✓ Livraison à domicile ajoutée"
                             ) : (
                                 <>
-                                    🚀 Je sors du lot — livraison à domicile
+                                    🚀 Ne pas attendre — livraison directe chez moi
                                     <span className="bg-[#FF6B6B] text-white text-xs px-2 py-0.5 font-bold">+20€</span>
                                 </>
                             )}

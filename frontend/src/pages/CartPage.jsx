@@ -110,7 +110,7 @@ export default function CartPage() {
                                     </div>
                                     {it.product_id === "__express__" ? (
                                         <p className="text-xs uppercase tracking-widest font-bold text-[#FF6B6B] mb-3">
-                                            Je sors du lot — livraison directement chez moi
+                                            Ne pas attendre — livraison directe chez moi
                                         </p>
                                     ) : (
                                         <p className="text-xs uppercase tracking-widest font-bold text-black/60 mb-3">
