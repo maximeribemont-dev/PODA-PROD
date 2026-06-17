@@ -7,6 +7,8 @@ import logging
 import asyncio
 import base64
 import uuid
+import time
+from collections import defaultdict
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Dict
@@ -49,6 +51,19 @@ logger = logging.getLogger("poda")
 
 app = FastAPI(title="Poda API")
 api_router = APIRouter(prefix="/api")
+
+# Rate limiter léger — compatible serverless Vercel
+_rate_store: Dict[str, List[float]] = defaultdict(list)
+
+def rate_limit(key: str, max_calls: int, window_seconds: int) -> None:
+    """Lève HTTPException 429 si la limite est dépassée."""
+    now = time.time()
+    calls = _rate_store[key]
+    # Nettoie les appels hors fenêtre
+    _rate_store[key] = [t for t in calls if now - t < window_seconds]
+    if len(_rate_store[key]) >= max_calls:
+        raise HTTPException(status_code=429, detail="Trop de requêtes — réessayez dans un moment.")
+    _rate_store[key].append(now)
 
 
 # ---------------- Models ----------------
@@ -222,6 +237,8 @@ async def get_branding():
 # ---------------- Checkout ----------------
 @api_router.post("/orders/checkout")
 async def create_checkout(body: CheckoutRequest, http_request: Request):
+    ip = http_request.client.host if http_request.client else "unknown"
+    rate_limit(f"checkout:{ip}", max_calls=10, window_seconds=60)
     if not body.items:
         raise HTTPException(400, "Panier vide")
 
@@ -451,7 +468,9 @@ def require_admin(x_admin_password: Optional[str] = Header(default=None)):
 
 
 @api_router.post("/admin/login")
-async def admin_login(payload: Dict[str, str]):
+async def admin_login(request: Request, payload: Dict[str, str]):
+    ip = request.client.host if request.client else "unknown"
+    rate_limit(f"login:{ip}", max_calls=5, window_seconds=60)
     if payload.get("password") != ADMIN_PASSWORD:
         raise HTTPException(401, "Mot de passe incorrect")
     return {"ok": True}
