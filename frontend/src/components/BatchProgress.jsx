@@ -47,6 +47,14 @@ export const BatchProgress = ({ progress, compact = false }) => {
                             ? "🎉 Lot complet — en route vers la production !"
                             : `Encore ${remaining} unité${remaining > 1 ? "s" : ""} avant expédition au bureau.`}
                     </p>
+                    {!isComplete && progress.deadline_days_left !== null && progress.deadline_days_left !== undefined && (
+                        <p className="mt-1.5 text-xs font-bold uppercase tracking-wide text-black/50 flex items-center gap-1.5">
+                            <span>📅</span>
+                            {progress.deadline_days_left > 0
+                                ? `Lancement automatique dans ${progress.deadline_days_left} jour${progress.deadline_days_left > 1 ? "s" : ""} max, même si le lot n'est pas complet`
+                                : "Lancement automatique imminent, même si le lot n'est pas complet"}
+                        </p>
+                    )}
                     {!isComplete && (
                         <button
                             onClick={handleExpress}

@@ -12,7 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Dict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import stripe
 
@@ -36,6 +36,7 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "poda2026")
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "20"))
+BATCH_DEADLINE_DAYS = int(os.environ.get("BATCH_DEADLINE_DAYS", "28"))
 
 if resend and RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
@@ -109,6 +110,8 @@ class GlobalProgress(BaseModel):
     position_in_batch: int
     batch_size: int
     remaining: int
+    deadline_at: Optional[str] = None
+    deadline_days_left: Optional[int] = None
 
 
 # ---------------- Helpers ----------------
@@ -128,7 +131,55 @@ async def _get_product(product_id: str) -> Optional[dict]:
     return await db.products.find_one({"id": product_id, "active": True}, {"_id": 0})
 
 
-async def _count_paid_units() -> int:
+async def _get_or_create_batch_deadline(batch_number: int) -> dict:
+    """Récupère le doc batch (avec deadline) ou le crée si c'est la première commande du lot."""
+    doc = await db.batches.find_one({"batch_number": batch_number}, {"_id": 0})
+    if doc:
+        return doc
+    deadline = datetime.now(timezone.utc) + timedelta(days=BATCH_DEADLINE_DAYS)
+    new_doc = {
+        "batch_number": batch_number,
+        "deadline_at": deadline.isoformat(),
+        "forced_launch": False,
+        "created_at": now_iso(),
+    }
+    await db.batches.update_one(
+        {"batch_number": batch_number},
+        {"$setOnInsert": new_doc},
+        upsert=True,
+    )
+    return await db.batches.find_one({"batch_number": batch_number}, {"_id": 0})
+
+
+async def _check_and_force_batch_if_overdue(batch_number: int) -> bool:
+    """Si la deadline du lot est dépassée et qu'il n'est pas encore forcé, le marque comme lancé.
+    Retourne True si le lot vient d'être forcé (pour déclencher la notif)."""
+    doc = await db.batches.find_one({"batch_number": batch_number})
+    if not doc or doc.get("forced_launch"):
+        return False
+    deadline = datetime.fromisoformat(doc["deadline_at"])
+    if datetime.now(timezone.utc) >= deadline:
+        await db.batches.update_one(
+            {"batch_number": batch_number},
+            {"$set": {"forced_launch": True, "forced_at": now_iso()}},
+        )
+        return True
+    return False
+
+
+async def _count_units_in_batch(batch_number: int) -> int:
+    """Compte les unités payées appartenant à un lot donné."""
+    cursor = db.orders.aggregate(
+        [
+            {"$match": {"payment_status": "paid", "batch_number": batch_number}},
+            {"$group": {"_id": None, "sum": {"$sum": "$total_units"}}},
+        ]
+    )
+    docs = await cursor.to_list(length=1)
+    return docs[0]["sum"] if docs else 0
+
+
+
     """Count total paid units across all orders (global counter)."""
     cursor = db.orders.aggregate(
         [
@@ -215,12 +266,31 @@ async def global_progress():
     total = await _count_paid_units()
     position = total % BATCH_SIZE
     current = (total // BATCH_SIZE) + 1
+
+    deadline_at = None
+    deadline_days_left = None
+
+    # Le lot en cours n'a une deadline que si au moins une commande a été payée dedans
+    if position > 0:
+        batch_doc = await db.batches.find_one({"batch_number": current}, {"_id": 0})
+        if batch_doc:
+            # Vérifie si la deadline est dépassée → force le lancement automatiquement
+            await _check_and_force_batch_if_overdue(current)
+            batch_doc = await db.batches.find_one({"batch_number": current}, {"_id": 0})
+            deadline_at = batch_doc.get("deadline_at")
+            if deadline_at and not batch_doc.get("forced_launch"):
+                deadline = datetime.fromisoformat(deadline_at)
+                delta = deadline - datetime.now(timezone.utc)
+                deadline_days_left = max(0, delta.days)
+
     return GlobalProgress(
         total_units_paid=total,
         current_batch_number=current,
         position_in_batch=position,
         batch_size=BATCH_SIZE,
         remaining=BATCH_SIZE - position,
+        deadline_at=deadline_at,
+        deadline_days_left=deadline_days_left,
     )
 
 
@@ -401,6 +471,8 @@ async def _finalize_order_if_paid(session_id: str) -> Optional[dict]:
         update_doc["batch_number"] = batch_number
         update_doc["start_position"] = start_position
         update_doc["end_position"] = end_position
+        # Crée la deadline de 4 semaines si c'est la première commande payée de ce lot
+        await _get_or_create_batch_deadline(batch_number)
 
     await db.orders.update_one(
         {"stripe_session_id": session_id, "payment_status": {"$ne": "paid"}},
@@ -506,15 +578,20 @@ async def admin_stats():
     async for doc in per_product_cursor:
         per_product.append({"product_id": doc["_id"], "product_name": doc["name"], "units": doc["units"]})
 
+    current_batch_number = (total_units // BATCH_SIZE) + 1
+    batch_doc = await db.batches.find_one({"batch_number": current_batch_number}, {"_id": 0})
+
     return {
         "total_units_paid": total_units,
         "total_orders_paid": total_orders_paid,
         "total_orders": total_orders,
         "revenue": revenue,
         "batch_size": BATCH_SIZE,
-        "current_batch_number": (total_units // BATCH_SIZE) + 1,
+        "current_batch_number": current_batch_number,
         "position_in_batch": total_units % BATCH_SIZE,
         "per_product": per_product,
+        "batch_deadline_at": batch_doc.get("deadline_at") if batch_doc else None,
+        "batch_forced_launch": batch_doc.get("forced_launch", False) if batch_doc else False,
     }
 
 
