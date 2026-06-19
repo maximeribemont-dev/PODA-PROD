@@ -179,6 +179,18 @@ async def _count_units_in_batch(batch_number: int) -> int:
     return docs[0]["sum"] if docs else 0
 
 
+async def _count_paid_units() -> int:
+    """Count total paid units across all orders (global counter)."""
+    cursor = db.orders.aggregate(
+        [
+            {"$match": {"payment_status": "paid"}},
+            {"$group": {"_id": None, "sum": {"$sum": "$total_units"}}},
+        ]
+    )
+    docs = await cursor.to_list(length=1)
+    return docs[0]["sum"] if docs else 0
+
+
 
     """Count total paid units across all orders (global counter)."""
     cursor = db.orders.aggregate(
