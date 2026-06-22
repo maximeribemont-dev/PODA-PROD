@@ -33,11 +33,12 @@ export const adminShipBatch = async (password, batchNumber) =>
         })
     ).data;
 
-export const adminUpdateBranding = async (password, { file, associationName }) => {
+export const adminUpdateBranding = async (password, { file, associationName, notificationEmail }) => {
     const fd = new FormData();
     if (file) fd.append("logo", file);
     const headers = { "X-Admin-Password": password };
     if (associationName) headers["X-Asso-Name"] = associationName;
+    if (notificationEmail) headers["X-Notification-Email"] = notificationEmail;
     const res = await api.post("/admin/settings/branding", fd, { headers });
     return res.data;
 };

@@ -620,6 +620,7 @@ async def ship_batch(batch_number: int):
 async def update_branding(
     logo: Optional[UploadFile] = File(default=None),
     association_name: Optional[str] = Header(default=None, alias="X-Asso-Name"),
+    notification_email: Optional[str] = Header(default=None, alias="X-Notification-Email"),
 ):
     update: Dict = {"updated_at": now_iso()}
     if logo is not None:
@@ -631,6 +632,8 @@ async def update_branding(
         update["logo_data_url"] = f"data:{mime};base64,{b64}"
     if association_name:
         update["association_name"] = association_name.strip()
+    if notification_email:
+        update["notification_email"] = notification_email.strip().lower()
     if len(update) == 1:
         raise HTTPException(400, "Aucune donnée à mettre à jour")
     await db.settings.update_one(

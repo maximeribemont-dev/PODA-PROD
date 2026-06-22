@@ -20,6 +20,7 @@ export default function AdminPage() {
     const [orders, setOrders] = useState([]);
     const [stats, setStats] = useState(null);
     const [assoName, setAssoName] = useState("");
+    const [notificationEmail, setNotificationEmail] = useState("");
     const [busy, setBusy] = useState(false);
     const fileRef = useRef(null);
     const { logo_data_url, association_name, refresh: refreshBranding } = useBranding();
@@ -46,6 +47,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (association_name) setAssoName(association_name);
+        if (branding?.notification_email) setNotificationEmail(branding.notification_email);
     }, [association_name]);
 
     const refresh = async () => {
@@ -104,7 +106,7 @@ export default function AdminPage() {
     const handleSaveAssoName = async () => {
         setBusy(true);
         try {
-            await adminUpdateBranding(password, { associationName: assoName });
+            await adminUpdateBranding(password, { associationName: assoName, notificationEmail });
             await refreshBranding();
             toast.success("Nom de l'association mis à jour");
         } catch {
@@ -271,6 +273,15 @@ export default function AdminPage() {
                                 placeholder="Ex: Mon Asso Poda"
                                 data-testid="admin-asso-name"
                             />
+                            <label className="neo-label mt-3">Email de notification</label>
+                            <input
+                                type="email"
+                                className="neo-input"
+                                value={notificationEmail}
+                                onChange={(e) => setNotificationEmail(e.target.value)}
+                                placeholder="president@monasso.fr"
+                            />
+                            <p className="text-xs text-black/50">Reçoit une alerte quand le lot est lancé (20 pièces atteintes ou délai expiré)</p>
                             <button
                                 onClick={handleSaveAssoName}
                                 disabled={busy || !assoName.trim()}
