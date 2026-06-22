@@ -163,6 +163,8 @@ async def _check_and_force_batch_if_overdue(batch_number: int) -> bool:
             {"batch_number": batch_number},
             {"$set": {"forced_launch": True, "forced_at": now_iso()}},
         )
+        # Notifie tous les acheteurs du lot
+        asyncio.create_task(_send_batch_launched_email(batch_number, reason="délai de 4 semaines écoulé"))
         return True
     return False
 
@@ -209,48 +211,167 @@ def _items_summary(items: List[dict]) -> str:
     )
 
 
-async def _send_confirmation_email(order: dict) -> None:
-    subject = f"Poda - Confirmation de commande #{order['order_number']}"
-    summary = _items_summary(order["items"])
-    pos_start = order.get("start_position")
-    pos_end = order.get("end_position")
-    progress_text = (
-        f"Positions {pos_start} à {pos_end} dans le lot collectif (lot de {BATCH_SIZE} unités)"
-        if pos_start
-        else ""
-    )
-    html = f"""
-    <table width=\"100%\" style=\"font-family:Arial,sans-serif;background:#FDF8F5;padding:24px;\">
-      <tr><td>
-        <table width=\"560\" align=\"center\" style=\"background:#fff;border:4px solid #000;padding:24px;\">
-          <tr><td>
-            <h1 style=\"margin:0 0 8px 0;font-size:28px;color:#000;\">Merci {order['customer']['first_name']} !</h1>
-            <p style=\"margin:0 0 16px 0;color:#333;\">Votre commande Poda est confirmée.</p>
-            <p style=\"margin:0 0 8px 0;\"><strong>N°:</strong> {order['order_number']}</p>
-            <p style=\"margin:0 0 8px 0;\"><strong>Articles:</strong> {summary}</p>
-            <p style=\"margin:0 0 8px 0;\"><strong>Total:</strong> {order['total_amount']:.2f} EUR</p>
-            <hr style=\"border:none;border-top:2px dashed #000;margin:16px 0;\" />
-            <p style=\"margin:0 0 8px 0;font-weight:bold;\">Progression du lot collectif</p>
-            <p style=\"margin:0 0 16px 0;color:#333;\">{progress_text}. Dès que le lot atteint {BATCH_SIZE} unités, l'ensemble est expédié au bureau Poda.</p>
-            <p style=\"margin:0;\">À très vite,<br/>L'équipe Poda</p>
-          </td></tr>
+def _email_base(content: str) -> str:
+    """Wrapper HTML email commun PODA."""
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#FDF8F5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr><td align="center" style="padding:24px 12px;">
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:4px solid #000;max-width:560px;width:100%;">
+      <tr><td style="padding:32px 28px;">
+        <!-- Header -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td><span style="font-size:28px;font-weight:900;letter-spacing:-1px;color:#000;">PODA<span style="color:#FF6B6B;">.</span></span></td>
+            <td align="right"><span style="font-size:11px;color:#999;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">by BLEEM</span></td>
+          </tr>
         </table>
+        <hr style="border:none;border-top:4px solid #000;margin:0 0 24px 0;">
+        {content}
+        <hr style="border:none;border-top:2px dashed #000;margin:24px 0;">
+        <p style="margin:0;font-size:12px;color:#999;text-align:center;">
+          PODA by BLEEM · 3 rue des Noisetiers, 72190 Sargé-lès-le-Mans<br>
+          <a href="https://poda.bleem-co.fr" style="color:#999;">poda.bleem-co.fr</a>
+        </p>
       </td></tr>
     </table>
+  </td></tr>
+</table>
+</body></html>"""
+
+
+async def _send_confirmation_email(order: dict) -> None:
+    """Email de confirmation de commande envoyé immédiatement après paiement."""
+    is_express = any(it.get("product_id") == "__express__" for it in order.get("items", []))
+    summary_lines = "".join([
+        f"<tr><td style='padding:6px 0;border-bottom:1px solid #eee;'>{it['quantity']}× {it.get('product_name', it.get('name', ''))} {'— ' + it['size'] + ' / ' + it['color'] if it.get('size') and it['size'] != '—' else ''}</td>"
+        f"<td style='padding:6px 0;border-bottom:1px solid #eee;text-align:right;font-weight:bold;'>{it['unit_price'] * it['quantity']:.2f}€</td></tr>"
+        for it in order.get("items", [])
+    ])
+
+    # Récupère la deadline du lot en cours
+    batch_number = order.get("batch_number", 1)
+    batch_doc = await db.batches.find_one({"batch_number": batch_number}, {"_id": 0})
+    deadline_text = ""
+    if batch_doc and batch_doc.get("deadline_at") and not is_express:
+        deadline = datetime.fromisoformat(batch_doc["deadline_at"])
+        deadline_fr = deadline.strftime("%d/%m/%Y")
+        deadline_text = f"""
+        <tr><td colspan="2" style="padding-top:16px;">
+          <div style="background:#FBEA8C;border:2px solid #000;padding:14px;border-radius:2px;">
+            <p style="margin:0 0 6px 0;font-weight:bold;font-size:14px;">📦 Quand serez-vous livré ?</p>
+            <p style="margin:0;font-size:13px;color:#333;">
+              Votre commande part en production dès que le lot atteint <strong>20 pièces</strong>,
+              ou automatiquement le <strong>{deadline_fr}</strong> même si le lot n'est pas complet.
+              Livraison au bureau de l'association sous 10 à 15 jours ouvrés après le lancement.
+            </p>
+          </div>
+        </td></tr>"""
+    elif is_express:
+        deadline_text = f"""
+        <tr><td colspan="2" style="padding-top:16px;">
+          <div style="background:#000;padding:14px;border-radius:2px;">
+            <p style="margin:0 0 6px 0;font-weight:bold;font-size:14px;color:#fff;">🚀 Livraison express à domicile</p>
+            <p style="margin:0;font-size:13px;color:#ccc;">
+              Votre commande est traitée en priorité et expédiée directement chez vous sous <strong>8 jours ouvrés</strong>.
+              Vous recevrez un email de suivi dès l'expédition.
+            </p>
+          </div>
+        </td></tr>"""
+
+    content = f"""
+    <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:900;">Merci {order['customer']['first_name']} ! 🎉</h1>
+    <p style="margin:0 0 24px 0;color:#666;font-size:14px;">Votre commande PODA est confirmée.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+      <tr>
+        <td style="font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#999;padding-bottom:8px;">Commande</td>
+        <td style="font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#999;padding-bottom:8px;text-align:right;">#{order['order_number']}</td>
+      </tr>
+      {summary_lines}
+      <tr>
+        <td style="padding-top:12px;font-weight:bold;font-size:16px;">Total</td>
+        <td style="padding-top:12px;font-weight:bold;font-size:16px;text-align:right;">{order['total_amount']:.2f}€</td>
+      </tr>
+      {deadline_text}
+    </table>
     """
+
+    subject = f"✅ Commande #{order['order_number']} confirmée — PODA by BLEEM"
+    html = _email_base(content)
+
     if not (resend and RESEND_API_KEY):
-        logger.info(
-            "[EMAIL MOCK] to=%s subject=%s body_len=%d",
-            order["customer"]["email"], subject, len(html),
-        )
+        logger.info("[EMAIL MOCK] to=%s subject=%s", order["customer"]["email"], subject)
         return
     try:
         await asyncio.to_thread(
             resend.Emails.send,
             {"from": SENDER_EMAIL, "to": [order["customer"]["email"]], "subject": subject, "html": html},
         )
+        logger.info("Email confirmation envoyé à %s", order["customer"]["email"])
     except Exception as e:
         logger.error("Resend email failed: %s", e)
+
+
+async def _send_batch_launched_email(batch_number: int, reason: str = "20 unités atteintes") -> None:
+    """Email envoyé à tous les acheteurs du lot quand il part en production."""
+    orders = await db.orders.find(
+        {"payment_status": "paid", "batch_number": batch_number},
+        {"_id": 0}
+    ).to_list(None)
+
+    if not orders:
+        return
+
+    if not (resend and RESEND_API_KEY):
+        logger.info("[EMAIL MOCK] batch_launched lot #%d — %d destinataires", batch_number, len(orders))
+        return
+
+    for order in orders:
+        is_express = any(it.get("product_id") == "__express__" for it in order.get("items", []))
+        if is_express:
+            continue  # Les commandes express ne sont pas concernées par le lancement de lot
+
+        summary_lines = "".join([
+            f"<tr><td style='padding:6px 0;border-bottom:1px solid #eee;'>{it['quantity']}× {it.get('product_name', '')} {'— ' + it['size'] + ' / ' + it['color'] if it.get('size') and it['size'] != '—' else ''}</td></tr>"
+            for it in order.get("items", []) if it.get("product_id") != "__express__"
+        ])
+
+        content = f"""
+        <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:900;">C'est parti {order['customer']['first_name']} ! 🚀</h1>
+        <p style="margin:0 0 24px 0;color:#666;font-size:14px;">Votre lot PODA est lancé en production.</p>
+
+        <div style="background:#FBEA8C;border:2px solid #000;padding:16px;margin-bottom:20px;">
+          <p style="margin:0 0 8px 0;font-weight:bold;font-size:15px;">Lot #{batch_number} — {reason}</p>
+          <p style="margin:0;font-size:13px;color:#333;">
+            Votre commande est en cours de fabrication. Livraison au bureau de l'association
+            sous <strong>10 à 15 jours ouvrés</strong>.
+          </p>
+        </div>
+
+        <p style="margin:0 0 8px 0;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#999;">Votre commande</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          {summary_lines}
+          <tr>
+            <td style="padding-top:12px;font-weight:bold;">Total payé</td>
+            <td style="padding-top:12px;font-weight:bold;text-align:right;">{order['total_amount']:.2f}€</td>
+          </tr>
+        </table>
+        """
+
+        subject = f"🚀 Votre lot PODA #{batch_number} est en production !"
+        html = _email_base(content)
+        try:
+            await asyncio.to_thread(
+                resend.Emails.send,
+                {"from": SENDER_EMAIL, "to": [order["customer"]["email"]], "subject": subject, "html": html},
+            )
+            logger.info("Email batch_launched envoyé à %s", order["customer"]["email"])
+        except Exception as e:
+            logger.error("Resend batch email failed for %s: %s", order["customer"]["email"], e)
+
 
 
 # ---------------- Public routes ----------------
@@ -485,6 +606,10 @@ async def _finalize_order_if_paid(session_id: str) -> Optional[dict]:
         update_doc["end_position"] = end_position
         # Crée la deadline de 4 semaines si c'est la première commande payée de ce lot
         await _get_or_create_batch_deadline(batch_number)
+        # Vérifie si cette commande complète le lot (atteint les 20 pièces)
+        new_total = prior_units + int(order["total_units"])
+        if new_total % BATCH_SIZE == 0:
+            asyncio.create_task(_send_batch_launched_email(batch_number, reason="20 unités atteintes"))
 
     await db.orders.update_one(
         {"stripe_session_id": session_id, "payment_status": {"$ne": "paid"}},
