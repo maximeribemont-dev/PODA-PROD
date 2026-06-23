@@ -8,7 +8,7 @@ import HomePage from "./pages/HomePage";
 import CartPage from "./pages/CartPage";
 import SuccessPage from "./pages/SuccessPage";
 import AdminPage from "./pages/AdminPage";
-import { CgvPage, PrivacyPage } from "./pages/LegalPages";
+import { CgvPage, PrivacyPage, FaqPage } from "./pages/LegalPages";
 
 function App() {
     return (
@@ -24,6 +24,7 @@ function App() {
                             <Route path="/admin" element={<AdminPage />} />
                             <Route path="/legal/cgv" element={<CgvPage />} />
                             <Route path="/legal/confidentialite" element={<PrivacyPage />} />
+                            <Route path="/faq" element={<FaqPage />} />
                         </Routes>
                         <Toaster position="top-right" richColors />
                     </BrowserRouter>

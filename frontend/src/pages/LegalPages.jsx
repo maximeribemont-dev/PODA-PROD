@@ -242,3 +242,82 @@ export function PrivacyPage() {
         </Layout>
     );
 }
+
+const FAQ_ITEMS = [
+    {
+        q: "C'est quoi le lot collectif ?",
+        a: "PODA fonctionne en impression à la demande groupée. Quand vous commandez, votre article rejoint un lot collectif. Dès que ce lot atteint 20 pièces commandées et payées (tous produits confondus), BLEEM lance la fabrication et expédie l'ensemble au bureau de votre association.",
+    },
+    {
+        q: "Quand vais-je être livré ?",
+        a: "Si vous avez choisi la livraison classique (lot collectif) : comptez 10 à 15 jours ouvrés après le lancement du lot. Si vous avez choisi l'option express (+20€) : votre commande est expédiée directement chez vous sous 8 jours ouvrés, sans attendre le lot.",
+    },
+    {
+        q: "Que se passe-t-il si le lot n'atteint jamais 20 pièces ?",
+        a: "Pas d'inquiétude — si le lot n'a pas atteint 20 pièces au bout de 4 semaines (28 jours) à compter de la première commande payée, BLEEM lance automatiquement la production avec les commandes reçues. Vous recevrez un email pour vous en informer.",
+    },
+    {
+        q: "C'est quoi l'option « Ne pas attendre — livraison directe chez moi » ?",
+        a: "En ajoutant cette option (+20€) à votre panier, votre commande est traitée en priorité et expédiée directement à votre adresse personnelle, sans attendre que le lot atteigne 20 pièces. Idéal si vous en avez besoin rapidement.",
+    },
+    {
+        q: "Ma commande est livrée où ?",
+        a: "Par défaut, les commandes sont regroupées et expédiées au bureau de votre association, qui se charge de la distribution aux membres. Si vous avez choisi l'option express, la livraison s'effectue directement à l'adresse que vous avez indiquée lors de la commande.",
+    },
+    {
+        q: "Puis-je annuler ou modifier ma commande ?",
+        a: "Non. Les produits étant fabriqués sur mesure et personnalisés à la demande, conformément à l'article L221-28 du Code de la consommation, toute commande validée et payée est définitive. Vous ne pouvez pas modifier votre taille, couleur ou quantité après paiement.",
+    },
+    {
+        q: "Comment je suis informé du lancement de la production ?",
+        a: "Vous recevez un email automatique à l'adresse fournie lors de votre commande dès que le lot est lancé en production (20 pièces atteintes ou délai de 4 semaines écoulé).",
+    },
+    {
+        q: "J'ai reçu un produit défectueux, que faire ?",
+        a: "Contactez-nous dans les 14 jours suivant la réception à lemans@bleem-co.fr en joignant des photos du défaut constaté. En cas de défaut manifeste imputable à BLEEM (erreur de personnalisation, produit endommagé), nous proposons un remplacement ou un remboursement.",
+    },
+    {
+        q: "Mes données personnelles sont-elles en sécurité ?",
+        a: "Oui. Vos données sont utilisées uniquement pour le traitement de votre commande. Les données bancaires sont gérées directement par Stripe (jamais stockées chez nous). Pour plus de détails, consultez notre politique de confidentialité.",
+    },
+    {
+        q: "Qui est BLEEM ?",
+        a: "BLEEM est un atelier créatif B2B basé à Sargé-lès-le-Mans (72), spécialisé dans le merchandising identitaire. PODA est notre solution dédiée aux associations, pour leur permettre d'avoir du merch pro sans avancer de trésorerie.",
+    },
+];
+
+export function FaqPage() {
+    return (
+        <Layout title="Questions fréquentes">
+            <p className="text-sm text-black/60 mb-4">
+                Une question sur PODA ? Vous trouverez ici les réponses aux questions les plus fréquentes.
+                Si vous ne trouvez pas votre réponse,{" "}
+                <a href="mailto:lemans@bleem-co.fr" className="underline font-bold">contactez-nous</a>.
+            </p>
+            <div className="space-y-4">
+                {FAQ_ITEMS.map((item, i) => (
+                    <details key={i} className="border-4 border-black group">
+                        <summary className="p-4 font-display text-lg cursor-pointer list-none flex items-center justify-between hover:bg-[#FBEA8C] transition-colors">
+                            {item.q}
+                            <span className="text-2xl font-bold ml-4 group-open:rotate-45 transition-transform inline-block">+</span>
+                        </summary>
+                        <div className="px-4 pb-4 pt-2 border-t-4 border-black text-[15px] leading-relaxed">
+                            {item.a}
+                        </div>
+                    </details>
+                ))}
+            </div>
+            <div className="mt-8 bg-black text-white p-6 text-center">
+                <p className="font-display text-xl mb-2">Votre asso veut son PODA ?</p>
+                <a
+                    href="https://bleem-co.fr/contactez-nous/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-[#FF6B6B] text-black font-display uppercase text-sm px-6 py-2 border-2 border-[#FF6B6B] hover:bg-transparent hover:text-[#FF6B6B] transition-colors mt-2"
+                >
+                    Contacte BLEEM →
+                </a>
+            </div>
+        </Layout>
+    );
+}

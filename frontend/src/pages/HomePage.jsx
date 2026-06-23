@@ -144,6 +144,7 @@ export default function HomePage() {
                             PODA<span className="text-[#FF6B6B]">.</span>
                         </div>
                         <nav className="flex flex-wrap gap-5 text-sm">
+                            <Link to="/faq" className="hover:underline">FAQ</Link>
                             <Link to="/legal/cgv" className="hover:underline" data-testid="footer-cgv">CGV</Link>
                             <Link to="/legal/confidentialite" className="hover:underline" data-testid="footer-privacy">Confidentialité</Link>
                             <Link to="/admin" className="hover:underline">Admin</Link>
