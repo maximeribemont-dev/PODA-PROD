@@ -30,62 +30,147 @@ export function CgvPage() {
                 immatriculée au RCS du Mans sous le numéro <strong>953 785 706 00029</strong>,
                 au capital social de <strong>1 000 €</strong>, dont le siège social est situé{" "}
                 <strong>3 rue des Noisetiers, 72190 Sargé-lès-le-Mans</strong>.
+                Email de contact : <strong>lemans@bleem-co.fr</strong>.
             </p>
 
-            <H2>2. Objet</H2>
+            <H2>2. Objet et champ d'application</H2>
             <p>
-                Les présentes CGV régissent la vente de produits personnalisés (textile et accessoires)
-                proposés sur Poda, fabriqués en print on demand à la demande de l'acheteur, pour le
-                compte d'une association partenaire.
+                Les présentes Conditions Générales de Vente (CGV) régissent l'ensemble des ventes de
+                produits personnalisés (textile, accessoires et objets) proposés sur la plateforme Poda
+                (ci-après « Poda »), accessible à l'adresse <strong>poda.bleem-co.fr</strong>, exploitée
+                par la SAS BLEEM. Ces produits sont fabriqués en print on demand (impression à la demande)
+                à la demande de l'acheteur, pour le compte d'une association partenaire.
+                Toute commande implique l'acceptation pleine et entière des présentes CGV.
             </p>
 
-            <H2>3. Commande et paiement</H2>
+            <H2>3. Prix</H2>
             <p>
-                Le client passe commande via le panier en ligne. Le paiement est effectué en une fois
-                par carte bancaire via le prestataire <strong>Stripe</strong>. La commande est ferme
-                et définitive dès validation du paiement.
+                Les prix affichés sur Poda sont indiqués en euros toutes taxes comprises (TTC).
+                La SAS BLEEM se réserve le droit de modifier ses prix à tout moment, étant entendu
+                que le prix applicable à la commande est celui en vigueur au moment de la validation
+                du paiement. Les frais de livraison éventuels sont indiqués séparément avant la
+                confirmation de la commande.
             </p>
 
-            <H2>4. Lot collectif et délais de production</H2>
+            <H2>4. Commande et paiement</H2>
             <p>
-                Les produits sont fabriqués en lots de 20 unités confondues. Le lancement en production
-                intervient dès que le lot collectif atteint 20 commandes payées. Le délai de fabrication
-                puis d'expédition au bureau de l'association est généralement de 2 à 4 semaines à compter
-                du démarrage du lot.
+                Le client sélectionne ses produits, choisit ses options (taille, couleur, quantité),
+                renseigne ses coordonnées, puis procède au paiement. Le paiement est effectué en une
+                seule fois, par carte bancaire, via le prestataire sécurisé <strong>Stripe</strong>
+                (Stripe Payments Europe, Ltd). Les données bancaires ne sont jamais stockées par BLEEM.
+                La commande est ferme et définitive dès validation du paiement par Stripe. Un email
+                de confirmation est adressé à l'acheteur à l'adresse email fournie lors de la commande.
             </p>
 
-            <H2>5. Livraison</H2>
+            <H2>5. Modalités de production — lot collectif</H2>
             <p>
-                Les commandes sont livrées au bureau de l'association, qui se charge ensuite de la
-                remise aux acheteurs selon les modalités définies avec elle.
+                Les produits sont fabriqués selon le système du <strong>lot collectif</strong> :
+                la production est lancée dès que le lot atteint <strong>20 unités commandées et payées</strong>
+                (tous produits confondus au sein de la boutique de l'association).
+            </p>
+            <p>
+                <strong>Délai maximum garanti :</strong> Si le seuil de 20 unités n'est pas atteint dans
+                un délai de <strong>4 semaines (28 jours calendaires)</strong> à compter de la première
+                commande payée du lot en cours, BLEEM lance automatiquement la production avec les commandes
+                reçues, quel que soit le nombre d'unités atteint. L'acheteur est informé par email du
+                lancement de la production.
+            </p>
+            <p>
+                Le délai de fabrication et d'expédition au bureau de l'association est généralement de
+                <strong>10 à 15 jours ouvrés</strong> à compter du lancement de la production.
             </p>
 
-            <H2>6. Droit de rétractation</H2>
+            <H2>6. Option livraison express à domicile</H2>
+            <p>
+                L'acheteur peut choisir l'option <strong>« Ne pas attendre — livraison directe chez moi »</strong>,
+                moyennant un supplément de <strong>20 € TTC</strong> ajouté au panier. Dans ce cas :
+            </p>
+            <ul className="list-disc pl-6 space-y-1">
+                <li>La commande est traitée en priorité, indépendamment du lot collectif en cours.</li>
+                <li>La livraison est effectuée directement à l'adresse indiquée par l'acheteur lors de la commande.</li>
+                <li>Le délai de livraison est de <strong>8 jours ouvrés</strong> à compter de la validation du paiement.</li>
+                <li>Ce supplément de 20 € est dû dès la validation du paiement et ne fait pas l'objet d'un remboursement,
+                sauf erreur imputable à BLEEM ou défaut manifeste de fabrication.</li>
+            </ul>
+
+            <H2>7. Livraison</H2>
+            <p>
+                <strong>Lot collectif :</strong> Les commandes sont expédiées groupées au bureau de
+                l'association partenaire, qui se charge ensuite de la remise aux acheteurs selon les
+                modalités qu'elle définit. BLEEM ne peut être tenu responsable des délais de remise
+                finale par l'association.
+            </p>
+            <p>
+                <strong>Livraison express :</strong> Les commandes avec option express sont expédiées
+                directement à l'adresse de livraison renseignée par l'acheteur. Il appartient à
+                l'acheteur de fournir une adresse complète et exacte. En cas d'adresse erronée ou
+                incomplète, BLEEM ne pourra être tenu responsable de la non-livraison.
+            </p>
+            <p>
+                En cas de retard d'expédition imputable à BLEEM dépassant de plus de 7 jours ouvrés
+                le délai annoncé, l'acheteur peut demander l'annulation de sa commande et le remboursement
+                intégral du montant payé.
+            </p>
+
+            <H2>8. Droit de rétractation</H2>
             <p className="bg-[#FBEA8C] border-4 border-black p-4">
-                <strong>Les produits étant personnalisés à la demande</strong>, conformément à
-                l'<strong>article L221-28 du Code de la consommation</strong>, le droit de rétractation
-                ne s'applique pas. Toute commande validée et payée est définitive et ne peut faire
-                l'objet d'un remboursement, sauf défaut manifeste de fabrication.
+                <strong>Les produits étant fabriqués sur mesure et personnalisés à la demande</strong>{" "}
+                de l'acheteur (print on demand), conformément à l'<strong>article L221-28 12° du Code
+                de la consommation</strong>, le droit de rétractation de 14 jours prévu à l'article
+                L221-18 du même code <strong>ne s'applique pas</strong>. Toute commande validée et
+                payée est définitive et ne peut faire l'objet d'un remboursement, sauf dans les cas
+                prévus aux articles 9 et 10 des présentes CGV.
             </p>
 
-            <H2>7. Garanties</H2>
+            <H2>9. Garanties légales</H2>
             <p>
-                En cas de défaut manifeste (produit endommagé, erreur de personnalisation imputable à
-                Poda), le client dispose de 14 jours après réception pour en informer l'éditeur par
-                email. Un remplacement ou un avoir sera alors proposé.
+                Conformément aux articles L217-4 et suivants du Code de la consommation et aux articles
+                1641 et suivants du Code civil, l'acheteur bénéficie des garanties légales de conformité
+                et des vices cachés. En cas de défaut manifeste imputable à BLEEM (produit endommagé à
+                la réception, erreur de personnalisation, produit non conforme à la commande), l'acheteur
+                dispose de <strong>14 jours après réception</strong> pour en informer BLEEM par email à
+                l'adresse <strong>lemans@bleem-co.fr</strong>, en joignant des photos du défaut constaté.
+                BLEEM proposera alors, au choix de l'acheteur, un remplacement ou un remboursement total.
             </p>
 
-            <H2>8. Données personnelles</H2>
+            <H2>10. Service client et règlement des litiges</H2>
             <p>
-                Les données collectées via le formulaire de commande sont utilisées exclusivement pour
-                le traitement de la commande et la livraison. Pour plus d'informations, consultez la{" "}
+                Pour toute question ou réclamation, l'acheteur peut contacter BLEEM à l'adresse
+                email <strong>lemans@bleem-co.fr</strong>. BLEEM s'engage à répondre dans un délai
+                de 5 jours ouvrés.
+            </p>
+            <p>
+                Conformément à l'article L612-1 du Code de la consommation, en cas de litige non résolu
+                amiablement, l'acheteur peut recourir gratuitement à un médiateur de la consommation.
+                BLEEM adhère au service de médiation <strong>CM2C</strong> (Centre de Médiation de la
+                Consommation de Conciliateurs de Justice), accessible à l'adresse{" "}
+                <strong>www.cm2c.net</strong>.
+            </p>
+            <p>
+                La Commission européenne met également à disposition une plateforme de règlement en ligne
+                des litiges (RLL) accessible à l'adresse : <strong>https://ec.europa.eu/consumers/odr</strong>.
+            </p>
+
+            <H2>11. Données personnelles</H2>
+            <p>
+                Les données collectées via le formulaire de commande sont traitées conformément au
+                Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et
+                Libertés. Pour plus d'informations, consultez la{" "}
                 <Link to="/legal/confidentialite" className="underline font-bold">politique de confidentialité</Link>.
             </p>
 
-            <H2>9. Droit applicable</H2>
+            <H2>12. Propriété intellectuelle</H2>
             <p>
-                Les présentes CGV sont soumises au droit français. Tout litige sera soumis aux
-                tribunaux compétents du Mans, sauf disposition légale contraire.
+                L'ensemble des éléments du site Poda (logo, textes, visuels, architecture) sont la
+                propriété exclusive de la SAS BLEEM et sont protégés par le droit de la propriété
+                intellectuelle. Toute reproduction ou utilisation sans autorisation préalable est interdite.
+            </p>
+
+            <H2>13. Droit applicable et juridiction</H2>
+            <p>
+                Les présentes CGV sont soumises au droit français. En cas de litige non résolu par
+                la voie amiable ou par la médiation, les tribunaux compétents du Mans seront seuls
+                compétents, sauf disposition légale contraire applicable au consommateur.
             </p>
         </Layout>
     );
