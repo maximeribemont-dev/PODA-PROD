@@ -229,7 +229,7 @@ export function PrivacyPage() {
             <p>
                 Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement,
                 de limitation et d'opposition. Pour exercer ces droits, contactez-nous à{" "}
-                <a href="mailto:contact@bleem-co.fr" className="underline font-bold">contact@bleem-co.fr</a>.
+                <a href="mailto:lemans@bleem-co.fr" className="underline font-bold">lemans@bleem-co.fr</a>.
                 Vous pouvez également saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline font-bold">CNIL</a>.
             </p>
 
