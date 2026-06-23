@@ -107,9 +107,10 @@ export function CgvPage() {
                 incomplète, BLEEM ne pourra être tenu responsable de la non-livraison.
             </p>
             <p>
-                En cas de retard d'expédition imputable à BLEEM dépassant de plus de 7 jours ouvrés
-                le délai annoncé, l'acheteur peut demander l'annulation de sa commande et le remboursement
-                intégral du montant payé.
+                En cas de retard d'expédition imputable à BLEEM, l'acheteur est informé par email
+                dans les meilleurs délais. Les produits étant fabriqués sur mesure, aucun remboursement
+                ne peut être accordé pour ce seul motif, sauf défaut manifeste de fabrication prévu
+                à l'article 9 des présentes CGV.
             </p>
 
             <H2>8. Droit de rétractation</H2>
