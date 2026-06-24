@@ -23,6 +23,9 @@ export const adminLogin = async (password) =>
 export const adminGetOrders = async (password) =>
     (await api.get("/admin/orders", { headers: { "X-Admin-Password": password } })).data;
 
+export const adminCancelOrder = async (password, orderNumber) =>
+    (await api.delete(`/admin/orders/${orderNumber}`, { headers: { "X-Admin-Password": password } })).data;
+
 export const adminGetStats = async (password) =>
     (await api.get("/admin/stats", { headers: { "X-Admin-Password": password } })).data;
 

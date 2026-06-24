@@ -690,6 +690,19 @@ async def admin_orders():
     return await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(length=1000)
 
 
+@api_router.delete("/admin/orders/{order_number}", dependencies=[Depends(require_admin)])
+async def admin_cancel_order(order_number: str):
+    order = await db.orders.find_one({"order_number": order_number})
+    if not order:
+        raise HTTPException(404, "Commande introuvable")
+    if order.get("payment_status") == "paid":
+        raise HTTPException(400, "Impossible d'annuler une commande déjà payée — effectuez un remboursement depuis Stripe.")
+    result = await db.orders.delete_one({"order_number": order_number})
+    if result.deleted_count == 0:
+        raise HTTPException(500, "Erreur lors de la suppression")
+    return {"ok": True, "deleted": order_number}
+
+
 @api_router.get("/admin/stats", dependencies=[Depends(require_admin)])
 async def admin_stats():
     total_units = await _count_paid_units()

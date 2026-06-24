@@ -7,6 +7,7 @@ import {
     adminShipBatch,
     adminUpdateBranding,
     adminDeleteLogo,
+    adminCancelOrder,
 } from "../lib/api";
 import { useBranding } from "../context/BrandingContext";
 import { Lock, RefreshCcw, Truck, LogOut, Upload, ImageOff } from "lucide-react";
@@ -311,12 +312,13 @@ export default function AdminPage() {
                                 <th className="text-left p-3 font-bold uppercase tracking-widest text-xs">Lot</th>
                                 <th className="text-left p-3 font-bold uppercase tracking-widest text-xs">Statut</th>
                                 <th className="text-left p-3 font-bold uppercase tracking-widest text-xs">Expédié</th>
+                                <th className="text-left p-3 font-bold uppercase tracking-widest text-xs">Actions</th>
                             </tr>
                         </thead>
                         <tbody data-testid="admin-orders-table">
                             {orders.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="text-center p-8 text-black/60">
+                                    <td colSpan={8} className="text-center p-8 text-black/60">
                                         Aucune commande.
                                     </td>
                                 </tr>
@@ -344,6 +346,26 @@ export default function AdminPage() {
                                     </td>
                                     <td className="p-3"><StatusPill status={o.payment_status} /></td>
                                     <td className="p-3">{o.shipped ? "✓" : "—"}</td>
+                                    <td className="p-3">
+                                        {o.payment_status !== "paid" && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!window.confirm(`Annuler la commande ${o.order_number} ?`)) return;
+                                                    try {
+                                                        await adminCancelOrder(password, o.order_number);
+                                                        toast.success(`Commande ${o.order_number} annulée`);
+                                                        refresh();
+                                                    } catch (e) {
+                                                        toast.error(e?.response?.data?.detail || "Erreur lors de l'annulation");
+                                                    }
+                                                }}
+                                                className="text-[#FF6B6B] border-2 border-[#FF6B6B] px-2 py-1 text-xs font-bold hover:bg-[#FF6B6B] hover:text-white transition-colors"
+                                                title="Annuler la commande"
+                                            >
+                                                Annuler
+                                            </button>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
