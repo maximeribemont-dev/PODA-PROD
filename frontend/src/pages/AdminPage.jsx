@@ -23,7 +23,7 @@ export default function AdminPage() {
     const [notificationEmail, setNotificationEmail] = useState("");
     const [busy, setBusy] = useState(false);
     const fileRef = useRef(null);
-    const { logo_data_url, association_name, refresh: refreshBranding } = useBranding();
+    const { logo_data_url, association_name, notification_email: brandingNotificationEmail, refresh: refreshBranding } = useBranding();
 
     useEffect(() => {
         const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -47,7 +47,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (association_name) setAssoName(association_name);
-        if (branding?.notification_email) setNotificationEmail(branding.notification_email);
+        if (brandingNotificationEmail) setNotificationEmail(brandingNotificationEmail);
     }, [association_name]);
 
     const refresh = async () => {

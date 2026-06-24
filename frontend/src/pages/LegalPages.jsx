@@ -296,10 +296,10 @@ export function FaqPage() {
             </p>
             <div className="space-y-4">
                 {FAQ_ITEMS.map((item, i) => (
-                    <details key={i} className="border-4 border-black group">
+                    <details key={i} className="border-4 border-black">
                         <summary className="p-4 font-display text-lg cursor-pointer list-none flex items-center justify-between hover:bg-[#FBEA8C] transition-colors">
-                            {item.q}
-                            <span className="text-2xl font-bold ml-4 group-open:rotate-45 transition-transform inline-block">+</span>
+                            <span>{item.q}</span>
+                            <span className="text-2xl font-bold ml-4 flex-shrink-0">+</span>
                         </summary>
                         <div className="px-4 pb-4 pt-2 border-t-4 border-black text-[15px] leading-relaxed">
                             {item.a}
@@ -315,7 +315,7 @@ export function FaqPage() {
                     rel="noopener noreferrer"
                     className="inline-block bg-[#FF6B6B] text-black font-display uppercase text-sm px-6 py-2 border-2 border-[#FF6B6B] hover:bg-transparent hover:text-[#FF6B6B] transition-colors mt-2"
                 >
-                    Contacte BLEEM →
+                    Contacte BLEEM &rarr;
                 </a>
             </div>
         </Layout>
