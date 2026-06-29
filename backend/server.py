@@ -505,9 +505,62 @@ async def global_progress():
 async def get_branding():
     """Public branding (logo + association name) used by all pages."""
     doc = await db.settings.find_one({"_id": "branding"}, {"_id": 0}) or {}
+    # Génère un token asso si pas encore créé
+    if not doc.get("asso_token"):
+        token = str(uuid.uuid4()).replace("-", "")[:24]
+        await db.settings.update_one(
+            {"_id": "branding"},
+            {"$set": {"asso_token": token}},
+            upsert=True,
+        )
+        doc["asso_token"] = token
     return {
         "logo_data_url": doc.get("logo_data_url"),
         "association_name": doc.get("association_name", "Poda"),
+        "notification_email": doc.get("notification_email"),
+        "asso_token": doc.get("asso_token"),
+    }
+
+
+@api_router.get("/asso/{token}")
+async def asso_view(token: str):
+    """Vue publique pour le responsable asso — lecture seule, sans prix."""
+    branding = await db.settings.find_one({"_id": "branding"})
+    if not branding or branding.get("asso_token") != token:
+        raise HTTPException(403, "Lien invalide ou expiré.")
+
+    orders = await db.orders.find(
+        {"payment_status": "paid"},
+        {"_id": 0, "order_number": 1, "customer": 1, "items": 1, "batch_number": 1, "created_at": 1, "shipped": 1}
+    ).sort("created_at", -1).to_list(length=500)
+
+    # Nettoie les items — pas de prix exposés
+    for o in orders:
+        o["items"] = [
+            {
+                "product_name": it.get("product_name", ""),
+                "quantity": it.get("quantity", 1),
+                "size": it.get("size", "—"),
+                "color": it.get("color", "—"),
+            }
+            for it in o.get("items", [])
+            if it.get("product_id") != "__express__"
+        ]
+
+    total_units = await _count_paid_units()
+    batch_number = (total_units // BATCH_SIZE) + 1
+    position_in_batch = total_units % BATCH_SIZE
+    batch_doc = await db.batches.find_one({"batch_number": batch_number}, {"_id": 0})
+
+    return {
+        "association_name": branding.get("association_name", "Mon Association"),
+        "logo_data_url": branding.get("logo_data_url"),
+        "orders": orders,
+        "total_units": total_units,
+        "batch_number": batch_number,
+        "position_in_batch": position_in_batch,
+        "batch_size": BATCH_SIZE,
+        "deadline_at": batch_doc.get("deadline_at") if batch_doc else None,
     }
 
 

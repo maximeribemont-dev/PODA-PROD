@@ -9,6 +9,7 @@ import CartPage from "./pages/CartPage";
 import SuccessPage from "./pages/SuccessPage";
 import AdminPage from "./pages/AdminPage";
 import { CgvPage, PrivacyPage, FaqPage } from "./pages/LegalPages";
+import AssoPage from "./pages/AssoPage";
 
 function App() {
     return (
@@ -25,6 +26,7 @@ function App() {
                             <Route path="/legal/cgv" element={<CgvPage />} />
                             <Route path="/legal/confidentialite" element={<PrivacyPage />} />
                             <Route path="/faq" element={<FaqPage />} />
+                            <Route path="/asso/:token" element={<AssoPage />} />
                         </Routes>
                         <Toaster position="top-right" richColors />
                     </BrowserRouter>

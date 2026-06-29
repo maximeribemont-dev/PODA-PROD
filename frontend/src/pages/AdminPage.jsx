@@ -26,7 +26,7 @@ export default function AdminPage() {
     const [notificationEmail, setNotificationEmail] = useState("");
     const [busy, setBusy] = useState(false);
     const fileRef = useRef(null);
-    const { logo_data_url, association_name, notification_email: brandingNotificationEmail, refresh: refreshBranding } = useBranding();
+    const { logo_data_url, association_name, notification_email: brandingNotificationEmail, asso_token, refresh: refreshBranding } = useBranding();
 
     useEffect(() => {
         const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -285,6 +285,26 @@ export default function AdminPage() {
                                 placeholder="president@monasso.fr"
                             />
                             <p className="text-xs text-black/50">Reçoit une alerte quand le lot est lancé (20 pièces atteintes ou délai expiré)</p>
+                            {asso_token && (
+                                <div className="mt-3 border-2 border-black bg-[#FBEA8C] p-3">
+                                    <p className="text-xs font-bold uppercase tracking-widest mb-1">🔗 Lien vue responsable asso</p>
+                                    <p className="text-xs text-black/60 mb-2">Partagez ce lien au responsable — il verra les commandes sans accès admin.</p>
+                                    <div className="flex gap-2 items-center">
+                                        <code className="text-xs bg-white border border-black px-2 py-1 flex-1 truncate">
+                                            {window.location.origin}/asso/{asso_token}
+                                        </code>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.origin}/asso/${asso_token}`);
+                                                toast.success("Lien copié !");
+                                            }}
+                                            className="text-xs font-bold border-2 border-black px-2 py-1 hover:bg-black hover:text-white transition-colors flex-shrink-0"
+                                        >
+                                            Copier
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <button
                                 onClick={handleSaveAssoName}
                                 disabled={busy || !assoName.trim()}
