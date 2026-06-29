@@ -12,6 +12,8 @@ export const BrandingProvider = ({ children }) => {
             setBranding({
                 logo_data_url: data.logo_data_url || null,
                 association_name: data.association_name || "Poda",
+                notification_email: data.notification_email || null,
+                asso_token: data.asso_token || null,
             });
         } catch {
             // silent
