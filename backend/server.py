@@ -773,7 +773,7 @@ async def admin_cancel_order(order_number: str):
     if not order:
         raise HTTPException(404, "Commande introuvable")
     if order.get("payment_status") == "paid":
-        raise HTTPException(400, "Impossible d'annuler une commande déjà payée — utilisez le remboursement.")
+        raise HTTPException(400, "Impossible d'annuler une commande payée non remboursée — utilisez le remboursement.")
     result = await db.orders.delete_one({"order_number": order_number})
     if result.deleted_count == 0:
         raise HTTPException(500, "Erreur lors de la suppression")

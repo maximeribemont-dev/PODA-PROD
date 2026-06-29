@@ -383,7 +383,24 @@ export default function AdminPage() {
                                             </button>
                                         )}
                                         {o.payment_status === "refunded" && (
-                                            <span className="text-xs text-gray-400 font-bold">Remboursé</span>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-orange-500 font-bold">Remboursé</span>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!window.confirm(`Supprimer la commande ${o.order_number} (déjà remboursée) ?`)) return;
+                                                        try {
+                                                            await adminCancelOrder(password, o.order_number);
+                                                            toast.success(`Commande supprimée`);
+                                                            refresh();
+                                                        } catch (e) {
+                                                            toast.error(e?.response?.data?.detail || "Erreur");
+                                                        }
+                                                    }}
+                                                    className="text-gray-400 border border-gray-300 px-2 py-0.5 text-xs hover:bg-gray-100 transition-colors"
+                                                >
+                                                    Supprimer
+                                                </button>
+                                            </div>
                                         )}
                                     </td>
                                 </tr>
