@@ -32,6 +32,9 @@ export const adminRefundOrder = async (password, orderNumber) =>
 export const adminUpdateOrderStatus = async (password, orderNumber, status) =>
     (await api.patch(`/admin/orders/${orderNumber}/status`, { status }, { headers: { "X-Admin-Password": password } })).data;
 
+export const adminRegenerateAssoToken = async (password) =>
+    (await api.post("/admin/settings/regenerate-token", {}, { headers: { "X-Admin-Password": password } })).data;
+
 export const adminGetStats = async (password) =>
     (await api.get("/admin/stats", { headers: { "X-Admin-Password": password } })).data;
 

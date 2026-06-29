@@ -523,8 +523,12 @@ async def get_branding():
 
 
 @api_router.get("/asso/{token}")
-async def asso_view(token: str):
-    """Vue publique pour le responsable asso — lecture seule, sans prix."""
+async def asso_view(token: str, request: Request):
+    """Vue publique pour le responsable asso — lecture seule, sans prix, emails masqués (RGPD)."""
+    # Rate limiting : 30 req/min par IP
+    ip = request.client.host if request.client else "unknown"
+    rate_limit(f"asso_view:{ip}", max_calls=30, window_seconds=60)
+
     branding = await db.settings.find_one({"_id": "branding"})
     if not branding or branding.get("asso_token") != token:
         raise HTTPException(403, "Lien invalide ou expiré.")
@@ -534,8 +538,20 @@ async def asso_view(token: str):
         {"_id": 0, "order_number": 1, "customer": 1, "items": 1, "batch_number": 1, "created_at": 1, "shipped": 1}
     ).sort("created_at", -1).to_list(length=500)
 
-    # Nettoie les items — pas de prix exposés
+    # RGPD : masque les emails (ex: l***@gmail.com) et ne retourne pas le téléphone/adresse
+    def mask_email(email: str) -> str:
+        if not email or "@" not in email:
+            return "***"
+        local, domain = email.split("@", 1)
+        return local[0] + "***@" + domain
+
     for o in orders:
+        customer = o.get("customer", {})
+        o["customer"] = {
+            "first_name": customer.get("first_name", ""),
+            "last_name": customer.get("last_name", ""),
+            "email": mask_email(customer.get("email", "")),
+        }
         o["items"] = [
             {
                 "product_name": it.get("product_name", ""),
@@ -562,6 +578,18 @@ async def asso_view(token: str):
         "batch_size": BATCH_SIZE,
         "deadline_at": batch_doc.get("deadline_at") if batch_doc else None,
     }
+
+
+@api_router.post("/admin/settings/regenerate-token", dependencies=[Depends(require_admin)])
+async def regenerate_asso_token():
+    """Regénère le token asso — invalide l'ancien lien immédiatement."""
+    new_token = str(uuid.uuid4()).replace("-", "")[:24]
+    await db.settings.update_one(
+        {"_id": "branding"},
+        {"$set": {"asso_token": new_token}},
+        upsert=True,
+    )
+    return {"ok": True, "asso_token": new_token}
 
 
 # ---------------- Checkout ----------------

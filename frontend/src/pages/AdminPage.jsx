@@ -10,6 +10,7 @@ import {
     adminCancelOrder,
     adminRefundOrder,
     adminUpdateOrderStatus,
+    adminRegenerateAssoToken,
 } from "../lib/api";
 import { useBranding } from "../context/BrandingContext";
 import { Lock, RefreshCcw, Truck, LogOut, Upload, ImageOff } from "lucide-react";
@@ -301,6 +302,21 @@ export default function AdminPage() {
                                             className="text-xs font-bold border-2 border-black px-2 py-1 hover:bg-black hover:text-white transition-colors flex-shrink-0"
                                         >
                                             Copier
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                if (!window.confirm("Regénérer le lien ?\n\nL'ancien lien sera immédiatement invalidé.")) return;
+                                                try {
+                                                    await adminRegenerateAssoToken(password);
+                                                    toast.success("Nouveau lien généré — rechargez la page");
+                                                    refreshBranding();
+                                                } catch (e) {
+                                                    toast.error("Erreur");
+                                                }
+                                            }}
+                                            className="text-xs font-bold border-2 border-[#FF6B6B] text-[#FF6B6B] px-2 py-1 hover:bg-[#FF6B6B] hover:text-white transition-colors flex-shrink-0"
+                                        >
+                                            ↺ Regénérer
                                         </button>
                                     </div>
                                 </div>

@@ -23,13 +23,14 @@ export default function AssoPage() {
 
     const exportCSV = () => {
         if (!data) return;
-        const rows = [["N° commande", "Prénom", "Nom", "Articles", "Taille", "Couleur", "Lot", "Expédié"]];
+        const rows = [["N° commande", "Prénom", "Nom", "Email (masqué)", "Articles", "Taille", "Couleur", "Lot", "Expédié"]];
         data.orders.forEach(o => {
             o.items.forEach(it => {
                 rows.push([
                     o.order_number,
                     o.customer?.first_name || "",
                     o.customer?.last_name || "",
+                    o.customer?.email || "",
                     `${it.quantity}x ${it.product_name}`,
                     it.size,
                     it.color,
