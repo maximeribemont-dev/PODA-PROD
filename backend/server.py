@@ -316,7 +316,7 @@ async def _send_confirmation_email(order: dict) -> None:
 
 
 async def _send_batch_launched_email(batch_number: int, reason: str = "20 unités atteintes") -> None:
-    """Email envoyé à tous les acheteurs du lot quand il part en production."""
+    """Email envoyé à tous les acheteurs du lot + email bureau asso avec montant généré."""
     orders = await db.orders.find(
         {"payment_status": "paid", "batch_number": batch_number},
         {"_id": 0}
@@ -325,14 +325,25 @@ async def _send_batch_launched_email(batch_number: int, reason: str = "20 unité
     if not orders:
         return
 
+    # Calcul de la marge totale du lot (hors express)
+    marge_totale = 0.0
+    total_pieces = 0
+    for o in orders:
+        for it in o.get("items", []):
+            if it.get("product_id") != "__express__":
+                marge_totale += it.get("marge_line", 0)
+                total_pieces += it.get("quantity", 0)
+    marge_totale = round(marge_totale, 2)
+
     if not (resend and RESEND_API_KEY):
-        logger.info("[EMAIL MOCK] batch_launched lot #%d — %d destinataires", batch_number, len(orders))
+        logger.info("[EMAIL MOCK] batch_launched lot #%d — %d destinataires — marge: %.2f€", batch_number, len(orders), marge_totale)
         return
 
+    # Email aux acheteurs individuels
     for order in orders:
         is_express = any(it.get("product_id") == "__express__" for it in order.get("items", []))
         if is_express:
-            continue  # Les commandes express ne sont pas concernées par le lancement de lot
+            continue
 
         summary_lines = "".join([
             f"<tr><td style='padding:6px 0;border-bottom:1px solid #eee;'>{it['quantity']}× {it.get('product_name', '')} {'— ' + it['size'] + ' / ' + it['color'] if it.get('size') and it['size'] != '—' else ''}</td></tr>"
@@ -372,7 +383,70 @@ async def _send_batch_launched_email(batch_number: int, reason: str = "20 unité
         except Exception as e:
             logger.error("Resend batch email failed for %s: %s", order["customer"]["email"], e)
 
+    # Email de notification au bureau de l'asso
+    branding = await db.settings.find_one({"_id": "branding"})
+    notification_email = branding.get("notification_email") if branding else None
+    asso_name = branding.get("association_name", "votre association") if branding else "votre association"
 
+    if notification_email:
+        orders_rows = ""
+        for o in orders:
+            items_str = ", ".join([
+                f"{it['quantity']}x {it.get('product_name', '')}"
+                for it in o.get("items", [])
+                if it.get("product_id") != "__express__"
+            ])
+            orders_rows += (
+                f"<tr>"
+                f"<td style='padding:4px 8px;border-bottom:1px solid #eee;'>{o['customer']['first_name']} {o['customer']['last_name']}</td>"
+                f"<td style='padding:4px 8px;border-bottom:1px solid #eee;'>{items_str}</td>"
+                f"<td style='padding:4px 8px;border-bottom:1px solid #eee;text-align:right;'>{o['total_amount']:.2f}€</td>"
+                f"</tr>"
+            )
+
+        content_asso = f"""
+        <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:900;">🎉 Lot #{batch_number} lancé en production !</h1>
+        <p style="margin:0 0 24px 0;color:#666;font-size:14px;">Récapitulatif du lot collectif de {asso_name}</p>
+
+        <div style="background:#FBEA8C;border:2px solid #000;padding:16px;margin-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-weight:bold;font-size:13px;">{total_pieces} pièces produites</td>
+              <td style="font-weight:bold;font-size:13px;text-align:right;">{reason}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding-top:12px;font-size:20px;font-weight:900;color:#000;">
+                Montant généré pour l'association : <span style="color:#FF6B6B;">{marge_totale:.2f}€</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="margin:0 0 8px 0;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#999;">Détail des commandes du lot</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <tr style="background:#000;color:#fff;">
+            <td style="padding:6px 8px;font-size:11px;font-weight:bold;">Membre</td>
+            <td style="padding:6px 8px;font-size:11px;font-weight:bold;">Articles</td>
+            <td style="padding:6px 8px;font-size:11px;font-weight:bold;text-align:right;">Montant</td>
+          </tr>
+          {orders_rows}
+        </table>
+
+        <p style="margin:16px 0 0;font-size:12px;color:#666;">
+          Livraison prévue au bureau de l'association sous 10 à 15 jours ouvrés.
+        </p>
+        """
+
+        subject_asso = f"🚀 Lot PODA #{batch_number} en production — {marge_totale:.2f}€ générés pour {asso_name}"
+        html_asso = _email_base(content_asso)
+        try:
+            await asyncio.to_thread(
+                resend.Emails.send,
+                {"from": SENDER_EMAIL, "to": [notification_email], "subject": subject_asso, "html": html_asso},
+            )
+            logger.info("Email bureau asso envoyé à %s — marge: %.2f€", notification_email, marge_totale)
+        except Exception as e:
+            logger.error("Resend asso notification failed: %s", e)
 
 # ---------------- Public routes ----------------
 @api_router.get("/")
@@ -478,6 +552,7 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
         line_amount = float(product["price"]) * it.quantity
         total_amount += line_amount
         total_units += it.quantity
+        price_asso = float(product.get("price_asso", 0))
         normalized_items.append({
             "product_id": it.product_id,
             "product_name": product["name"],
@@ -485,6 +560,8 @@ async def create_checkout(body: CheckoutRequest, http_request: Request):
             "color": it.color,
             "quantity": it.quantity,
             "unit_price": float(product["price"]),
+            "price_asso": price_asso,
+            "marge_line": round((float(product["price"]) - price_asso) * it.quantity, 2),
             "line_total": line_amount,
         })
 
@@ -696,11 +773,43 @@ async def admin_cancel_order(order_number: str):
     if not order:
         raise HTTPException(404, "Commande introuvable")
     if order.get("payment_status") == "paid":
-        raise HTTPException(400, "Impossible d'annuler une commande déjà payée — effectuez un remboursement depuis Stripe.")
+        raise HTTPException(400, "Impossible d'annuler une commande déjà payée — utilisez le remboursement.")
     result = await db.orders.delete_one({"order_number": order_number})
     if result.deleted_count == 0:
         raise HTTPException(500, "Erreur lors de la suppression")
     return {"ok": True, "deleted": order_number}
+
+
+@api_router.post("/admin/orders/{order_number}/refund", dependencies=[Depends(require_admin)])
+async def admin_refund_order(order_number: str):
+    """Rembourse une commande payée via Stripe et met à jour son statut en base."""
+    order = await db.orders.find_one({"order_number": order_number})
+    if not order:
+        raise HTTPException(404, "Commande introuvable")
+    if order.get("payment_status") != "paid":
+        raise HTTPException(400, "Seules les commandes payées peuvent être remboursées.")
+    if order.get("payment_status") == "refunded":
+        raise HTTPException(400, "Cette commande a déjà été remboursée.")
+
+    # Récupère le payment_intent depuis la session Stripe
+    session_id = order.get("stripe_session_id")
+    if not session_id:
+        raise HTTPException(400, "Session Stripe introuvable pour cette commande.")
+    try:
+        session = await asyncio.to_thread(stripe.checkout.Session.retrieve, session_id)
+        payment_intent_id = session.payment_intent
+        if not payment_intent_id:
+            raise HTTPException(400, "Payment intent introuvable — remboursez manuellement depuis Stripe.")
+        refund = await asyncio.to_thread(stripe.Refund.create, **{"payment_intent": payment_intent_id})
+    except stripe.error.StripeError as e:
+        raise HTTPException(400, f"Erreur Stripe : {str(e)}")
+
+    # Met à jour le statut en base
+    await db.orders.update_one(
+        {"order_number": order_number},
+        {"$set": {"payment_status": "refunded", "refunded_at": now_iso(), "stripe_refund_id": refund.id}}
+    )
+    return {"ok": True, "refund_id": refund.id, "amount": refund.amount / 100}
 
 
 @api_router.get("/admin/stats", dependencies=[Depends(require_admin)])
@@ -808,6 +917,7 @@ class ProductUpsert(BaseModel):
     name: str
     description: str = ""
     price: float = Field(gt=0)
+    price_asso: float = Field(default=0.0, ge=0)
     image: str = ""
     image_verso: str = ""
     sizes: List[str] = Field(default_factory=lambda: ["Unique"])
@@ -825,6 +935,7 @@ async def admin_create_product(body: ProductUpsert):
         "name": body.name,
         "description": body.description,
         "price": float(body.price),
+        "price_asso": float(body.price_asso),
         "currency": "eur",
         "image": body.image or "https://images.pexels.com/photos/12025472/pexels-photo-12025472.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
         "image_verso": body.image_verso or "",
@@ -846,6 +957,7 @@ async def admin_update_product(product_id: str, body: ProductUpsert):
         "name": body.name,
         "description": body.description,
         "price": float(body.price),
+        "price_asso": float(body.price_asso),
         "image": body.image or existing.get("image"),
         "image_verso": body.image_verso if body.image_verso is not None else existing.get("image_verso", ""),
         "sizes": body.sizes or ["Unique"],

@@ -13,6 +13,7 @@ const EMPTY = {
     name: "",
     description: "",
     price: 25,
+    price_asso: 0,
     image: "",
     image_verso: "",
     sizes: "Unique",
@@ -50,6 +51,7 @@ export default function ProductsAdmin({ password }) {
             name: p.name,
             description: p.description,
             price: p.price,
+            price_asso: p.price_asso || 0,
             image: p.image,
             image_verso: p.image_verso || "",
             sizes: (p.sizes || []).join(", "),
@@ -74,6 +76,7 @@ export default function ProductsAdmin({ password }) {
                 name: form.name.trim(),
                 description: form.description.trim(),
                 price: Number(form.price),
+                price_asso: Number(form.price_asso) || 0,
                 image: form.image.trim(),
                 image_verso: form.image_verso.trim(),
                 sizes: form.sizes.split(",").map((s) => s.trim()).filter(Boolean),
@@ -154,8 +157,17 @@ export default function ProductsAdmin({ password }) {
                             <input className="neo-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} data-testid="product-description" />
                         </div>
                         <div>
-                            <label className="neo-label">Prix (€)</label>
+                            <label className="neo-label">Prix vente (€)</label>
                             <input type="number" step="0.01" className="neo-input" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} data-testid="product-price" />
+                        </div>
+                        <div>
+                            <label className="neo-label">Prix asso (€) <span className="text-xs font-normal text-black/50">— coût pour l'asso</span></label>
+                            <input type="number" step="0.01" min="0" className="neo-input" value={form.price_asso} onChange={(e) => setForm({ ...form, price_asso: e.target.value })} placeholder="0.00" />
+                            {Number(form.price) > 0 && Number(form.price_asso) > 0 && (
+                                <p className="text-xs text-green-700 font-bold mt-1">
+                                    Marge : {(Number(form.price) - Number(form.price_asso)).toFixed(2)}€ / pièce
+                                </p>
+                            )}
                         </div>
                         <div className="md:col-span-2">
                             <label className="neo-label">Photos produit</label>

@@ -8,6 +8,7 @@ import {
     adminUpdateBranding,
     adminDeleteLogo,
     adminCancelOrder,
+    adminRefundOrder,
 } from "../lib/api";
 import { useBranding } from "../context/BrandingContext";
 import { Lock, RefreshCcw, Truck, LogOut, Upload, ImageOff } from "lucide-react";
@@ -347,7 +348,7 @@ export default function AdminPage() {
                                     <td className="p-3"><StatusPill status={o.payment_status} /></td>
                                     <td className="p-3">{o.shipped ? "✓" : "—"}</td>
                                     <td className="p-3">
-                                        {o.payment_status !== "paid" && (
+                                        {o.payment_status !== "paid" && o.payment_status !== "refunded" && (
                                             <button
                                                 onClick={async () => {
                                                     if (!window.confirm(`Annuler la commande ${o.order_number} ?`)) return;
@@ -360,10 +361,29 @@ export default function AdminPage() {
                                                     }
                                                 }}
                                                 className="text-[#FF6B6B] border-2 border-[#FF6B6B] px-2 py-1 text-xs font-bold hover:bg-[#FF6B6B] hover:text-white transition-colors"
-                                                title="Annuler la commande"
                                             >
                                                 Annuler
                                             </button>
+                                        )}
+                                        {o.payment_status === "paid" && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!window.confirm(`Rembourser ${o.total_amount?.toFixed(2)}€ à ${o.customer?.first_name} ${o.customer?.last_name} ?\n\nCette action est irréversible.`)) return;
+                                                    try {
+                                                        const res = await adminRefundOrder(password, o.order_number);
+                                                        toast.success(`Remboursement de ${res.amount?.toFixed(2)}€ effectué`);
+                                                        refresh();
+                                                    } catch (e) {
+                                                        toast.error(e?.response?.data?.detail || "Erreur lors du remboursement");
+                                                    }
+                                                }}
+                                                className="text-orange-500 border-2 border-orange-500 px-2 py-1 text-xs font-bold hover:bg-orange-500 hover:text-white transition-colors"
+                                            >
+                                                Rembourser
+                                            </button>
+                                        )}
+                                        {o.payment_status === "refunded" && (
+                                            <span className="text-xs text-gray-400 font-bold">Remboursé</span>
                                         )}
                                     </td>
                                 </tr>
