@@ -780,7 +780,23 @@ async def admin_cancel_order(order_number: str):
     return {"ok": True, "deleted": order_number}
 
 
-@api_router.post("/admin/orders/{order_number}/refund", dependencies=[Depends(require_admin)])
+@api_router.patch("/admin/orders/{order_number}/status", dependencies=[Depends(require_admin)])
+async def admin_update_order_status(order_number: str, body: Dict[str, str]):
+    """Change le statut d'une commande manuellement (ex: paid → cancelled, refunded)."""
+    new_status = body.get("status", "").strip()
+    allowed = {"cancelled", "refunded", "paid", "unpaid"}
+    if new_status not in allowed:
+        raise HTTPException(400, f"Statut invalide. Valeurs autorisées : {', '.join(allowed)}")
+    order = await db.orders.find_one({"order_number": order_number})
+    if not order:
+        raise HTTPException(404, "Commande introuvable")
+    await db.orders.update_one(
+        {"order_number": order_number},
+        {"$set": {"payment_status": new_status, "status_updated_at": now_iso(), "status_updated_by": "admin"}}
+    )
+    return {"ok": True, "order_number": order_number, "status": new_status}
+
+
 async def admin_refund_order(order_number: str):
     """Rembourse une commande payée via Stripe et met à jour son statut en base."""
     order = await db.orders.find_one({"order_number": order_number})

@@ -9,6 +9,7 @@ import {
     adminDeleteLogo,
     adminCancelOrder,
     adminRefundOrder,
+    adminUpdateOrderStatus,
 } from "../lib/api";
 import { useBranding } from "../context/BrandingContext";
 import { Lock, RefreshCcw, Truck, LogOut, Upload, ImageOff } from "lucide-react";
@@ -345,7 +346,34 @@ export default function AdminPage() {
                                     <td className="p-3">
                                         {o.batch_number ? `#${o.batch_number} (${o.start_position}-${o.end_position})` : "—"}
                                     </td>
-                                    <td className="p-3"><StatusPill status={o.payment_status} /></td>
+                                    <td className="p-3">
+                                        <select
+                                            value={o.payment_status}
+                                            onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                if (!window.confirm(`Changer le statut de la commande ${o.order_number} en "${newStatus}" ?`)) return;
+                                                try {
+                                                    await adminUpdateOrderStatus(password, o.order_number, newStatus);
+                                                    toast.success(`Statut mis à jour → ${newStatus}`);
+                                                    refresh();
+                                                } catch (err) {
+                                                    toast.error(err?.response?.data?.detail || "Erreur");
+                                                }
+                                            }}
+                                            className="border-2 border-black text-xs font-bold uppercase px-2 py-1 cursor-pointer"
+                                            style={{
+                                                background: o.payment_status === "paid" ? "#4ECDC4"
+                                                    : o.payment_status === "refunded" ? "#FED7AA"
+                                                    : o.payment_status === "cancelled" ? "#FECACA"
+                                                    : "#FBEA8C"
+                                            }}
+                                        >
+                                            <option value="paid">Payée</option>
+                                            <option value="unpaid">Non payée</option>
+                                            <option value="refunded">Remboursée</option>
+                                            <option value="cancelled">Annulée</option>
+                                        </select>
+                                    </td>
                                     <td className="p-3">{o.shipped ? "✓" : "—"}</td>
                                     <td className="p-3">
                                         {o.payment_status !== "paid" && o.payment_status !== "refunded" && (
@@ -422,9 +450,11 @@ const Stat = ({ label, value }) => (
 
 const StatusPill = ({ status }) => {
     const map = {
-        paid: { c: "#4ECDC4", t: "Payée" },
+        paid:      { c: "#4ECDC4", t: "Payée" },
         initiated: { c: "#FBEA8C", t: "En cours" },
-        unpaid: { c: "#FBCFE8", t: "Non payée" },
+        unpaid:    { c: "#FBCFE8", t: "Non payée" },
+        refunded:  { c: "#FED7AA", t: "Remboursée" },
+        cancelled: { c: "#FECACA", t: "Annulée" },
     };
     const v = map[status] || { c: "#eee", t: status };
     return (
