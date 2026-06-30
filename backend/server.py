@@ -580,18 +580,6 @@ async def asso_view(token: str, request: Request):
     }
 
 
-@api_router.post("/admin/settings/regenerate-token", dependencies=[Depends(require_admin)])
-async def regenerate_asso_token():
-    """Regénère le token asso — invalide l'ancien lien immédiatement."""
-    new_token = str(uuid.uuid4()).replace("-", "")[:24]
-    await db.settings.update_one(
-        {"_id": "branding"},
-        {"$set": {"asso_token": new_token}},
-        upsert=True,
-    )
-    return {"ok": True, "asso_token": new_token}
-
-
 # ---------------- Checkout ----------------
 @api_router.post("/orders/checkout")
 async def create_checkout(body: CheckoutRequest, http_request: Request):
@@ -841,6 +829,18 @@ async def admin_login(request: Request, payload: Dict[str, str]):
     if payload.get("password") != ADMIN_PASSWORD:
         raise HTTPException(401, "Mot de passe incorrect")
     return {"ok": True}
+
+
+@api_router.post("/admin/settings/regenerate-token", dependencies=[Depends(require_admin)])
+async def regenerate_asso_token():
+    """Regénère le token asso — invalide l'ancien lien immédiatement."""
+    new_token = str(uuid.uuid4()).replace("-", "")[:24]
+    await db.settings.update_one(
+        {"_id": "branding"},
+        {"$set": {"asso_token": new_token}},
+        upsert=True,
+    )
+    return {"ok": True, "asso_token": new_token}
 
 
 @api_router.get("/admin/orders", dependencies=[Depends(require_admin)])
