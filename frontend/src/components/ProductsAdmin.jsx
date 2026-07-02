@@ -178,18 +178,30 @@ export default function ProductsAdmin({ password }) {
                                     {form.image && (
                                         <img src={form.image} alt="recto" className="w-24 h-24 object-cover border-2 border-black" />
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            window.cloudinary.createUploadWidget(
-                                                { cloudName: "dpwsbjwl0", uploadPreset: "poda_products", sources: ["local", "camera"], multiple: false, cropping: true, croppingAspectRatio: 1 },
-                                                (error, result) => { if (!error && result?.event === "success") setForm(f => ({ ...f, image: result.info.secure_url })); }
-                                            ).open();
-                                        }}
-                                        className="neo-btn-outline text-sm"
-                                    >
+                                    <label className="neo-btn-outline text-sm cursor-pointer">
                                         📷 {form.image ? "Changer" : "Ajouter"}
-                                    </button>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files[0];
+                                                if (!file) return;
+                                                const fd = new FormData();
+                                                fd.append("file", file);
+                                                fd.append("upload_preset", "poda_products");
+                                                try {
+                                                    const res = await fetch("https://api.cloudinary.com/v1_1/dpwsbjwl0/upload", { method: "POST", body: fd });
+                                                    const data = await res.json();
+                                                    if (data.secure_url) setForm(f => ({ ...f, image: data.secure_url }));
+                                                    else alert("Erreur upload : " + (data.error?.message || "inconnue"));
+                                                } catch (err) {
+                                                    alert("Erreur upload : " + err.message);
+                                                }
+                                                e.target.value = "";
+                                            }}
+                                        />
+                                    </label>
                                     {form.image && (
                                         <button type="button" onClick={() => setForm(f => ({ ...f, image: "" }))} className="text-xs text-[#FF6B6B] hover:underline">
                                             Supprimer
@@ -202,18 +214,30 @@ export default function ProductsAdmin({ password }) {
                                     {form.image_verso && (
                                         <img src={form.image_verso} alt="verso" className="w-24 h-24 object-cover border-2 border-black" />
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            window.cloudinary.createUploadWidget(
-                                                { cloudName: "dpwsbjwl0", uploadPreset: "poda_products", sources: ["local", "camera"], multiple: false, cropping: true, croppingAspectRatio: 1 },
-                                                (error, result) => { if (!error && result?.event === "success") setForm(f => ({ ...f, image_verso: result.info.secure_url })); }
-                                            ).open();
-                                        }}
-                                        className="neo-btn-outline text-sm"
-                                    >
+                                    <label className="neo-btn-outline text-sm cursor-pointer">
                                         📷 {form.image_verso ? "Changer" : "Ajouter"}
-                                    </button>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files[0];
+                                                if (!file) return;
+                                                const fd = new FormData();
+                                                fd.append("file", file);
+                                                fd.append("upload_preset", "poda_products");
+                                                try {
+                                                    const res = await fetch("https://api.cloudinary.com/v1_1/dpwsbjwl0/upload", { method: "POST", body: fd });
+                                                    const data = await res.json();
+                                                    if (data.secure_url) setForm(f => ({ ...f, image_verso: data.secure_url }));
+                                                    else alert("Erreur upload : " + (data.error?.message || "inconnue"));
+                                                } catch (err) {
+                                                    alert("Erreur upload : " + err.message);
+                                                }
+                                                e.target.value = "";
+                                            }}
+                                        />
+                                    </label>
                                     {form.image_verso && (
                                         <button type="button" onClick={() => setForm(f => ({ ...f, image_verso: "" }))} className="text-xs text-[#FF6B6B] hover:underline">
                                             Supprimer
