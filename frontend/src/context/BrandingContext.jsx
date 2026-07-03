@@ -14,6 +14,8 @@ export const BrandingProvider = ({ children }) => {
                 association_name: data.association_name || "Poda",
                 notification_email: data.notification_email || null,
                 asso_token: data.asso_token || null,
+                shop_mode: data.shop_mode || "batch",
+                campaign_end_at: data.campaign_end_at || null,
             });
         } catch {
             // silent

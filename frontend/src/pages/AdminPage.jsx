@@ -25,9 +25,11 @@ export default function AdminPage() {
     const [stats, setStats] = useState(null);
     const [assoName, setAssoName] = useState("");
     const [notificationEmail, setNotificationEmail] = useState("");
+    const [shopMode, setShopMode] = useState("batch");
+    const [campaignEndAt, setCampaignEndAt] = useState("");
     const [busy, setBusy] = useState(false);
     const fileRef = useRef(null);
-    const { logo_data_url, association_name, notification_email: brandingNotificationEmail, asso_token, refresh: refreshBranding } = useBranding();
+    const { logo_data_url, association_name, notification_email: brandingNotificationEmail, asso_token, shop_mode: brandingShopMode, campaign_end_at: brandingCampaignEndAt, refresh: refreshBranding } = useBranding();
 
     useEffect(() => {
         const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -52,6 +54,8 @@ export default function AdminPage() {
     useEffect(() => {
         if (association_name) setAssoName(association_name);
         if (brandingNotificationEmail) setNotificationEmail(brandingNotificationEmail);
+        if (brandingShopMode) setShopMode(brandingShopMode);
+        if (brandingCampaignEndAt) setCampaignEndAt(brandingCampaignEndAt.split("T")[0]); // format YYYY-MM-DD pour input date
     }, [association_name]);
 
     const refresh = async () => {
@@ -110,7 +114,14 @@ export default function AdminPage() {
     const handleSaveAssoName = async () => {
         setBusy(true);
         try {
-            await adminUpdateBranding(password, { associationName: assoName, notificationEmail });
+            await adminUpdateBranding(password, {
+                associationName: assoName,
+                notificationEmail,
+                shopMode,
+                campaignEndAt: shopMode === "campaign" && campaignEndAt
+                    ? new Date(campaignEndAt + "T23:59:59+02:00").toISOString()
+                    : undefined,
+            });
             await refreshBranding();
             toast.success("Nom de l'association mis à jour");
         } catch {
@@ -286,6 +297,48 @@ export default function AdminPage() {
                                 placeholder="president@monasso.fr"
                             />
                             <p className="text-xs text-black/50">Reçoit une alerte quand le lot est lancé (20 pièces atteintes ou délai expiré)</p>
+
+                            {/* Mode boutique */}
+                            <div className="mt-4 border-2 border-black p-4">
+                                <p className="text-xs font-bold uppercase tracking-widest mb-3">Mode boutique</p>
+                                <div className="flex gap-2 mb-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShopMode("batch")}
+                                        className={`flex-1 py-2 text-xs font-bold uppercase border-2 border-black transition-colors ${shopMode === "batch" ? "bg-black text-white" : "bg-white text-black hover:bg-[#FBEA8C]"}`}
+                                    >
+                                        🔄 Lot collectif
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShopMode("campaign")}
+                                        className={`flex-1 py-2 text-xs font-bold uppercase border-2 border-black transition-colors ${shopMode === "campaign" ? "bg-black text-white" : "bg-white text-black hover:bg-[#FBEA8C]"}`}
+                                    >
+                                        📅 Campagne / Drop
+                                    </button>
+                                </div>
+                                {shopMode === "batch" && (
+                                    <p className="text-xs text-black/50">Production lancée dès 20 pièces atteintes ou après 4 semaines. Idéal pour les commandes progressives.</p>
+                                )}
+                                {shopMode === "campaign" && (
+                                    <div>
+                                        <p className="text-xs text-black/50 mb-2">Production lancée automatiquement à la date de fin. Idéal pour les événements et drops limités.</p>
+                                        <label className="neo-label">Date de fin de campagne</label>
+                                        <input
+                                            type="date"
+                                            className="neo-input"
+                                            value={campaignEndAt}
+                                            min={new Date().toISOString().split("T")[0]}
+                                            onChange={(e) => setCampaignEndAt(e.target.value)}
+                                        />
+                                        {campaignEndAt && (
+                                            <p className="text-xs text-green-700 font-bold mt-1">
+                                                La boutique se fermera le {new Date(campaignEndAt).toLocaleDateString("fr-FR")} à 23h59
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             {asso_token && (
                                 <div className="mt-3 border-2 border-black bg-[#FBEA8C] p-3">
                                     <p className="text-xs font-bold uppercase tracking-widest mb-1">🔗 Lien vue responsable asso</p>

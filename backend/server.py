@@ -112,6 +112,10 @@ class GlobalProgress(BaseModel):
     remaining: int
     deadline_at: Optional[str] = None
     deadline_days_left: Optional[int] = None
+    shop_mode: str = "batch"  # "batch" ou "campaign"
+    campaign_end_at: Optional[str] = None
+    campaign_days_left: Optional[int] = None
+    campaign_ended: bool = False
 
 
 # ---------------- Helpers ----------------
@@ -474,14 +478,51 @@ async def global_progress():
     position = total % BATCH_SIZE
     current = (total // BATCH_SIZE) + 1
 
+    # Récupère le mode depuis les settings
+    settings = await db.settings.find_one({"_id": "branding"}) or {}
+    shop_mode = settings.get("shop_mode", "batch")
+    campaign_end_at = settings.get("campaign_end_at")
+
     deadline_at = None
     deadline_days_left = None
+    campaign_days_left = None
+    campaign_ended = False
 
-    # Le lot en cours n'a une deadline que si au moins une commande a été payée dedans
+    if shop_mode == "campaign" and campaign_end_at:
+        # Mode campagne : la date de fin est fixe, définie dans le BO
+        campaign_end = datetime.fromisoformat(campaign_end_at)
+        now = datetime.now(timezone.utc)
+        if now >= campaign_end:
+            campaign_ended = True
+            # Lancement automatique si pas encore lancé
+            batch_doc = await db.batches.find_one({"batch_number": current}, {"_id": 0})
+            if not batch_doc or not batch_doc.get("forced_launch"):
+                await db.batches.update_one(
+                    {"batch_number": current},
+                    {"$set": {"forced_launch": True, "forced_at": now_iso(), "batch_number": current}},
+                    upsert=True,
+                )
+                asyncio.create_task(_send_batch_launched_email(current, reason="fin de campagne"))
+        else:
+            delta = campaign_end - now
+            campaign_days_left = max(0, delta.days)
+
+        return GlobalProgress(
+            total_units_paid=total,
+            current_batch_number=current,
+            position_in_batch=position,
+            batch_size=BATCH_SIZE,
+            remaining=BATCH_SIZE - position,
+            shop_mode="campaign",
+            campaign_end_at=campaign_end_at,
+            campaign_days_left=campaign_days_left,
+            campaign_ended=campaign_ended,
+        )
+
+    # Mode lot collectif (défaut)
     if position > 0:
         batch_doc = await db.batches.find_one({"batch_number": current}, {"_id": 0})
         if batch_doc:
-            # Vérifie si la deadline est dépassée → force le lancement automatiquement
             await _check_and_force_batch_if_overdue(current)
             batch_doc = await db.batches.find_one({"batch_number": current}, {"_id": 0})
             deadline_at = batch_doc.get("deadline_at")
@@ -498,7 +539,9 @@ async def global_progress():
         remaining=BATCH_SIZE - position,
         deadline_at=deadline_at,
         deadline_days_left=deadline_days_left,
+        shop_mode="batch",
     )
+
 
 
 @api_router.get("/settings/branding")
@@ -519,6 +562,8 @@ async def get_branding():
         "association_name": doc.get("association_name", "Poda"),
         "notification_email": doc.get("notification_email"),
         "asso_token": doc.get("asso_token"),
+        "shop_mode": doc.get("shop_mode", "batch"),
+        "campaign_end_at": doc.get("campaign_end_at"),
     }
 
 
@@ -965,6 +1010,8 @@ async def update_branding(
     logo: Optional[UploadFile] = File(default=None),
     association_name: Optional[str] = Header(default=None, alias="X-Asso-Name"),
     notification_email: Optional[str] = Header(default=None, alias="X-Notification-Email"),
+    shop_mode: Optional[str] = Header(default=None, alias="X-Shop-Mode"),
+    campaign_end_at: Optional[str] = Header(default=None, alias="X-Campaign-End-At"),
 ):
     update: Dict = {"updated_at": now_iso()}
     if logo is not None:
@@ -978,6 +1025,17 @@ async def update_branding(
         update["association_name"] = association_name.strip()
     if notification_email:
         update["notification_email"] = notification_email.strip().lower()
+    if shop_mode in ("batch", "campaign"):
+        update["shop_mode"] = shop_mode
+    if campaign_end_at:
+        # Valide que c'est une date ISO valide
+        try:
+            datetime.fromisoformat(campaign_end_at)
+            update["campaign_end_at"] = campaign_end_at
+        except ValueError:
+            raise HTTPException(400, "Date de fin de campagne invalide (format ISO requis)")
+    if shop_mode == "batch":
+        update["campaign_end_at"] = None  # Réinitialise si on repasse en batch
     if len(update) == 1:
         raise HTTPException(400, "Aucune donnée à mettre à jour")
     await db.settings.update_one(
