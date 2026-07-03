@@ -100,7 +100,9 @@ export default function HomePage() {
                     {[
                         { n: "01", t: "Composez votre panier", d: "Choisissez vos pièces, tailles, couleurs et quantités.", c: "#FBEA8C" },
                         { n: "02", t: "Payez en 1 clic", d: "Formulaire express + paiement Stripe sécurisé.", c: "#C4B5FD" },
-                        { n: "03", t: "Lot expédié à 20", d: "Dès que 20 unités tous produits confondus sont atteintes, on lance la prod.", c: "#FBCFE8" },
+                        progress?.shop_mode === "campaign"
+                            ? { n: "03", t: "Campagne fermée → prod lancée", d: "À la date de fin de campagne, toutes les commandes partent en production et sont expédiées au bureau de l'asso.", c: "#FBCFE8" }
+                            : { n: "03", t: "Lot expédié à 20", d: "Dès que 20 unités tous produits confondus sont atteintes, on lance la prod.", c: "#FBCFE8" },
                     ].map((step) => (
                         <div key={step.n} className="neo-card p-6" style={{ background: step.c }}>
                             <div className="font-display text-5xl mb-4">{step.n}</div>
