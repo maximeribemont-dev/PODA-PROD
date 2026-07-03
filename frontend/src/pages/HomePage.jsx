@@ -48,8 +48,10 @@ export default function HomePage() {
                                 </span>
                             </h1>
                             <p className="text-lg sm:text-xl text-black/70 max-w-xl mb-8">
-                                Composez votre commande, ajoutez vos pièces au panier. Dès que <b>20 unités au total</b> sont
-                                achetées (tous produits confondus), le lot part en production et est expédié au bureau de l'asso.
+                                {progress?.shop_mode === "campaign"
+                                    ? <>Composez votre commande avant la fermeture de la campagne. Dès la date de fin, toutes les commandes partent en production et sont expédiées au bureau de l'asso.</>
+                                    : <>Composez votre commande, ajoutez vos pièces au panier. Dès que <b>20 unités au total</b> sont achetées (tous produits confondus), le lot part en production et est expédié au bureau de l'asso.</>
+                                }
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <a href="#produits" data-testid="hero-cta-shop" className="neo-btn neo-btn-primary">
@@ -65,7 +67,7 @@ export default function HomePage() {
                                 <div className="flex items-center gap-3 mb-4">
                                     <Users size={20} />
                                     <span className="text-xs font-bold uppercase tracking-[0.2em]">
-                                        Progression collective
+                                        {progress?.shop_mode === "campaign" ? "Campagne en cours" : "Progression collective"}
                                     </span>
                                 </div>
                                 <BatchProgress progress={progress} />
