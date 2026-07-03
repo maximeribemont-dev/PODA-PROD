@@ -10,6 +10,7 @@ import SuccessPage from "./pages/SuccessPage";
 import AdminPage from "./pages/AdminPage";
 import { CgvPage, PrivacyPage, FaqPage } from "./pages/LegalPages";
 import AssoPage from "./pages/AssoPage";
+import { CookieBanner } from "./components/CookieBanner";
 
 function App() {
     return (
@@ -29,6 +30,7 @@ function App() {
                             <Route path="/asso/:token" element={<AssoPage />} />
                         </Routes>
                         <Toaster position="top-right" richColors />
+                        <CookieBanner />
                     </BrowserRouter>
                 </CartProvider>
             </BrandingProvider>

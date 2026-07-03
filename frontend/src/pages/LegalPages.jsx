@@ -215,8 +215,12 @@ export function PrivacyPage() {
 
             <H2>5. Durée de conservation</H2>
             <p>
-                Les données de commande sont conservées 10 ans à des fins comptables et fiscales.
-                Les emails commerciaux peuvent être conservés 3 ans après le dernier contact.
+                Les données de commande (nom, prénom, email, adresse, articles commandés) sont conservées
+                <strong> 3 ans</strong> à compter de la date de commande, conformément à la prescription
+                commerciale applicable (article L110-4 du Code de commerce). À l'issue de cette période,
+                vos données sont supprimées ou anonymisées. Les données de facturation sont conservées
+                séparément par notre logiciel comptable (Sellsy) conformément à l'obligation légale de
+                10 ans.
             </p>
 
             <H2>6. Destinataires</H2>
@@ -228,16 +232,36 @@ export function PrivacyPage() {
 
             <H2>7. Vos droits</H2>
             <p>
-                Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement,
-                de limitation et d'opposition. Pour exercer ces droits, contactez-nous à{" "}
-                <a href="mailto:lemans@bleem-co.fr" className="underline font-bold">lemans@bleem-co.fr</a>.
-                Vous pouvez également saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline font-bold">CNIL</a>.
+                Conformément au RGPD (articles 15 à 22), vous disposez des droits suivants sur vos
+                données personnelles :
+            </p>
+            <ul className="list-disc pl-6 space-y-1 text-sm">
+                <li><strong>Droit d'accès</strong> — obtenir une copie de vos données</li>
+                <li><strong>Droit de rectification</strong> — corriger des données inexactes</li>
+                <li><strong>Droit à l'effacement</strong> (art. 17 RGPD) — demander la suppression de vos données, sauf obligation légale de conservation</li>
+                <li><strong>Droit à la limitation</strong> — restreindre le traitement de vos données</li>
+                <li><strong>Droit d'opposition</strong> — vous opposer à un traitement</li>
+                <li><strong>Droit à la portabilité</strong> — recevoir vos données dans un format structuré</li>
+            </ul>
+            <p className="mt-3">
+                Pour exercer ces droits, adressez votre demande par email à{" "}
+                <a href="mailto:lemans@bleem-co.fr" className="underline font-bold">lemans@bleem-co.fr</a>{" "}
+                en précisant votre nom, prénom et numéro de commande. BLEEM s'engage à répondre dans
+                un délai de <strong>30 jours</strong>. Vous pouvez également saisir la{" "}
+                <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline font-bold">CNIL</a>{" "}
+                en cas de litige non résolu.
             </p>
 
             <H2>8. Cookies</H2>
             <p>
-                Le site n'utilise que des cookies techniques nécessaires au fonctionnement (panier, session
-                admin). Aucun cookie de traçage ou publicitaire.
+                Le site PODA utilise uniquement des <strong>cookies techniques strictement nécessaires</strong> au
+                fonctionnement du service : mémorisation du panier et session administrateur. Ces cookies
+                ne nécessitent pas de consentement préalable au sens de l'article 82 de la loi Informatique
+                et Libertés, car ils sont indispensables au service demandé.
+            </p>
+            <p>
+                Aucun cookie de traçage, de mesure d'audience ou publicitaire n'est utilisé. Aucune donnée
+                n'est transmise à des régies publicitaires ou à des tiers à des fins commerciales.
             </p>
         </Layout>
     );
