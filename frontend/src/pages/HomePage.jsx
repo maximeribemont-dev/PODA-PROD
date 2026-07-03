@@ -79,7 +79,10 @@ export default function HomePage() {
                     <div className="marquee-track text-white font-display text-xl uppercase tracking-tight">
                         {Array.from({ length: 2 }).map((_, i) => (
                             <div key={i} className="flex items-center gap-12 px-12 whitespace-nowrap">
-                                <span>20 unités = 1 lot expédié</span>
+                                {progress?.shop_mode === "campaign"
+                                    ? <span>Campagne limitée</span>
+                                    : <span>20 unités = 1 lot expédié</span>
+                                }
                                 <span>•</span>
                                 <span>Print on demand</span>
                                 <span>•</span>
